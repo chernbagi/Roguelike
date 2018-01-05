@@ -1,6 +1,6 @@
 import ROT from 'rot-js';
 import * as U from './util.js';
-import {StartupMode} from './ui_mode.js';
+import {StartupMode, PlayMode, WinMode, LoseMode} from './ui_mode.js';
 export let Game = {
 
   display: {
@@ -9,11 +9,22 @@ export let Game = {
       w: 80,
       h: 24,
       o: null
+    },
+    avatar: {
+      w: 20,
+      h: 24,
+      o: null
+    },
+    message: {
+      w: 100,
+      h: 6,
+      o: null
     }
   },
 
   modes: {
     startup: '',
+    play: '',
   },
   curMode: '',
 
@@ -27,20 +38,29 @@ export let Game = {
       width: this.display.main.w,
       height: this.display.main.h,
       spacing: this.display.SPACING});
+    this.display.avatar.o = new ROT.Display({
+      width: this.display.main.w,
+      height: this.display.main.h,
+      spacing: this.display.SPACING});
+    this.display.message.o = new ROT.Display({
+      width: this.display.main.w,
+      height: this.display.main.h,
+      spacing: this.display.SPACING});
 
     this.setupModes();
     this.switchMode('startup');
   },
 
   setupModes: function(){
-    this.modes.startup = new StartupMode();
+    this.modes.startup = new StartupMode(this);
+    this.modes.play = new PlayMode(this);
   },
 
   switchMode: function(newModeName){
     if(this.curMode){
       this.curMode.exit();
     }
-    this.curMode = this.modes.newModeName
+    this.curMode = this.modes[newModeName];
     if (this.curmode){
       this.curMode.enter();
     }
@@ -54,16 +74,40 @@ export let Game = {
   },
 
   render: function() {
+    this.renderAvatar();
     this.renderMain();
+    this.renderMessage();
   },
+
+  renderAvatar: function() {
+    this.curMode.render(this.display.avatar.o);
+  },
+
+
+  renderMessage: function() {
+    this.curMode.render(this.display.message.o);
+  },
+
 
   renderMain: function() {
     //if(this.curMode.hasOwnProperty('render')){
       this.curMode.render(this.display.main.o);
     //}
-    // let d = this.display.main.o;
-    // for (let i = 0; i < 10; i++) {
-    //   d.drawText(5,i+5,"hello world");
-    // }
+  },
+
+  bindEvent: function(eventType) {
+    window.addEventListener(eventType, (evt) => {
+      this.eventHandler(eventType, evt);
+    });
+  },
+
+  eventHandler: function (eventType, evt) {
+    // When an event is received have the current ui handle it
+    if (this.curMode !== null && this._curMode != '') {
+        if (this.curMode.handleInput(eventType, evt)){
+          this.render();
+          //Message.ageMessages();
+        }
+    }
   }
 };
