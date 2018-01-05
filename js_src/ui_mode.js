@@ -1,22 +1,23 @@
 class UIMode {
-  constructor(){
-    console.log("created " + this.constructor.name)
+  constructor(Game){
+    console.log("created " + this.constructor.name);
+    this.Game = Game;
   }
   enter(){
-    console.log("entered " + this.constructor.name)
+    console.log("entered " + this.constructor.name);
   }
   exit(){
-    console.log("exited " + this.constructor.name)
+    console.log("exited " + this.constructor.name);
   }
   handleInput(eventType, evt){
-    console.log("handling " + this.constructor.name)
+    console.log("handling " + this.constructor.name);
     console.log(`event type is ${eventType}`)
     console.dir(evt)
     return(true)
   }
    render(display){
-    console.log("redering " + this.constructor.name)
-    display.drawText(2, 2, "redering " + this.constructor.name)
+    console.log("redering " + this.constructor.name);
+    display.drawText(2, 2, "redering " + this.constructor.name);
   }
 }
 
