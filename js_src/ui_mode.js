@@ -1,3 +1,5 @@
+import {Message} from './message.js';
+
 class UIMode {
   constructor(Game){
     console.log("created " + this.constructor.name);
@@ -39,18 +41,33 @@ export class StartupMode extends UIMode {
 }
 
 export class PlayMode extends UIMode {
-  constructor(){
-    super();
-  }
   render(display) {
     display.drawText(38, 3, "w to win l to lose")
+  }
+  handleInput(eventType, evt){
+    console.log(evt)
+    if (eventType == 'keyup' && evt.key == "w") {
+      console.dir(this);
+      console.log(this.Game);
+      this.Game.switchMode('win');
+      return true;
+    }
+    if (eventType == 'keyup' && evt.key == "l") {
+      console.dir(this);
+      console.log(this.Game);
+      this.Game.switchMode('lose');
+      return true;
+    }
+    if (eventType == 'keyup' && evt.key == "c") {
+      console.dir(this);
+      console.log(this.Game);
+      this.Game.switchMode('cache');
+      return true;
+    }
   }
 }
 
 export class WinMode extends UIMode {
-  constructor(){
-    super();
-  }
   render(display) {
     display.drawText(38, 3, "YOU")
     display.drawText(37, 4, "WIN")
@@ -58,11 +75,23 @@ export class WinMode extends UIMode {
 }
 
 export class LoseMode extends UIMode {
-  constructor(){
-    super();
-  }
   render(display) {
-    display.drawText(38, 3, "YOU")
-    display.drawText(37, 4, "LOSE")
+    display.drawText(38, 3, "YOU");
+    display.drawText(37, 4, "LOSE");
+  }
+}
+
+export class CacheMode extends UIMode {
+  render(display){
+    display.drawText(1, 1, "Hit esc to exit");
+    display.drawText(2, 1, Message.cache)
+  }
+  handleInput(eventType, evt){
+    if (eventType == 'keyup' && evt.key == "esc") {
+      console.dir(this);
+      console.log(this.Game);
+      this.Game.switchMode('play');
+      return true;
+    }
   }
 }

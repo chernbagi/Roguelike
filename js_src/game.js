@@ -1,6 +1,6 @@
 import ROT from 'rot-js';
 import * as U from './util.js';
-import {StartupMode, PlayMode, WinMode, LoseMode} from './ui_mode.js';
+import {StartupMode, PlayMode, WinMode, LoseMode, CacheMode} from './ui_mode.js';
 export let Game = {
 
   display: {
@@ -25,6 +25,9 @@ export let Game = {
   modes: {
     startup: '',
     play: '',
+    win: '',
+    lose: '',
+    cache: '',
   },
   curMode: '',
 
@@ -39,12 +42,12 @@ export let Game = {
       height: this.display.main.h,
       spacing: this.display.SPACING});
     this.display.avatar.o = new ROT.Display({
-      width: this.display.main.w,
-      height: this.display.main.h,
+      width: this.display.avatar.w,
+      height: this.display.avatar.h,
       spacing: this.display.SPACING});
     this.display.message.o = new ROT.Display({
-      width: this.display.main.w,
-      height: this.display.main.h,
+      width: this.display.message.w,
+      height: this.display.message.h,
       spacing: this.display.SPACING});
 
     this.setupModes();
@@ -54,6 +57,9 @@ export let Game = {
   setupModes: function(){
     this.modes.startup = new StartupMode(this);
     this.modes.play = new PlayMode(this);
+    this.modes.win = new WinMode(this);
+    this.modes.lose = new LoseMode(this);
+    this.modes.cache = new CacheMode(this);
   },
 
   switchMode: function(newModeName){
