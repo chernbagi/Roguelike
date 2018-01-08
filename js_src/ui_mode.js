@@ -144,21 +144,18 @@ export class PersistenceMode extends UIMode {
   }
   handleInput(eventType, evt){
     if (eventType == 'keyup') {
-      if (evt.key=="n" || "N"){
+      if (evt.key=="n" || evt.key == "N"){
         console.log("new game");
         this.Game.setupNewGame();
         this.Game.switchMode('play');
         return(true);
       }
-      if (evt.key=="s" || "S"){
+      if (evt.key=="s" || evt.key=="S"){
         this.handleSave();
-        console.log("save game");
-        this.Game.switchMode('play');
         return(true);
       }
-      if (evt.key== "l" || "L"){
+      if (evt.key== "l" || evt.key=="L"){
         this.handleLoad();
-        console.log("load game")
         this.Game.switchMode('play');
         return(true);
       }
@@ -166,8 +163,8 @@ export class PersistenceMode extends UIMode {
         this.Game.switchMode('play');
         return(true);
       }
+      return false;
     }
-    return false;
   }
 
 
@@ -186,7 +183,7 @@ handleLoad() {
       return;
   }
   let restorationString = window.localStorage.getItem('savestate')
-  this.Game.fromJSON();
+  this.Game.fromJSON(restorationString);
   console.log('load game')
 }
 localStorageAvailable() {
