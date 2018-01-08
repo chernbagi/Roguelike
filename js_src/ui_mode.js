@@ -42,10 +42,12 @@ export class StartupMode extends UIMode {
 }
 
 export class PlayMode extends UIMode {
+  enter(){
+    Message.send("hit escape to create new, load, or save game")
+  }
   render(display) {
     display.clear();
-    display.drawText(38, 3, "w to win l to lose")
-    Message.send("hit escape to create new, load, or save game")
+    display.drawText(30, 3, "w to win l to lose");
   }
   handleInput(eventType, evt){
     console.log(evt)
@@ -142,19 +144,62 @@ export class PersistenceMode extends UIMode {
   }
   handleInput(eventType, evt){
     if (eventType == 'keyup') {
-      if (evt.key=="n"){
-        console.log("new game")
-        this.Game.switchMode('play')
+      if (evt.key=="n" || "N"){
+        console.log("new game");
+        this.Game.setupNewGame();
+        this.Game.switchMode('play');
+        return(true);
       }
-      if (evt.key=="s"){
-        console.log("save game")
+      if (evt.key=="s" || "S"){
+        this.handleSave();
+        console.log("save game");
+        this.Game.switchMode('play');
+        return(true);
       }
-      if (evt.key== "l"){
+      if (evt.key== "l" || "L"){
+        this.handleLoad();
         console.log("load game")
+        this.Game.switchMode('play');
+        return(true);
       }
       if (evt.key == "Escape") {
-        this.Game.switchMode('play')
+        this.Game.switchMode('play');
+        return(true);
       }
+    }
+    return false;
+  }
+
+
+handleSave() {
+  if (! this.localStorageAvailable()) {
+      return;
+  }
+  window.localStorage.setItem('savestate', this.Game.toJSON(this.Game))
+  console.log('save game')
+  this.Game.hasSaved = true;
+  Message.send('Game saved');
+  this.Game.switchMode('play');
+}
+handleLoad() {
+  if (! this.localStorageAvailable()) {
+      return;
+  }
+  let restorationString = window.localStorage.getItem('savestate')
+  this.Game.fromJSON();
+  console.log('load game')
+}
+localStorageAvailable() {
+    // NOTE: see https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API
+    try {
+      var x = '__storage_test__';
+      window.localStorage.setItem( x, x);
+      window.localStorage.removeItem(x);
+      return true;
+    }
+    catch(e) {
+      Message.send('Sorry, no local data storage is available for this browser so game save/load is not possible');
+      return false;
     }
   }
 }

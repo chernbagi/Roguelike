@@ -33,13 +33,6 @@ SPACING: 1.1,
   curMode: '',
 
   init: function() {
-    console.dir(this);
-    console.dir(ROT);
-    this._randomSeed = 5 + Math.floor(Math.random()*100000);
-    //this._randomSeed = 76250;
-    console.log("using random seed "+this._randomSeed);
-    ROT.RNG.setSeed(this._randomSeed);
-
     this.display.main.o = new ROT.Display({
       width: this.display.main.w,
       height: this.display.main.h,
@@ -69,13 +62,17 @@ SPACING: 1.1,
   switchMode: function(newModeName){
     if (this.curMode) {
       this.curMode.exit();
-      this.render();
     }
     this.curMode = this.modes[newModeName];
     if (this.curMode){
       console.log(this.curMode)
       this.curMode.enter();
     }
+  },
+  setupNewGame: function(){
+    this._randomSeed = 5 + Math.floor(Math.random()*100000);
+    console.log("using random seed "+this._randomSeed);
+    ROT.RNG.setSeed(this._randomSeed);
   },
 
   getDisplay: function (displayId) {
@@ -119,5 +116,16 @@ SPACING: 1.1,
           //Message.ageMessages();
         }
     }
+  },
+
+  toJSON: function() {
+    let json = '';
+    json = JSON.stringify({rseed: this._randomSeed});
+    return json;
+  },
+
+  fromJSON: function(json) {
+    let state = JSON.parse(json);
+    this._randomSeed = state.rseed;
   }
 };
