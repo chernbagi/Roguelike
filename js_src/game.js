@@ -1,10 +1,10 @@
 import ROT from 'rot-js';
 import * as U from './util.js';
-import {StartupMode, PlayMode, WinMode, LoseMode, CacheMode} from './ui_mode.js';
+import {StartupMode, PlayMode, WinMode, LoseMode, CacheMode, PersistenceMode} from './ui_mode.js';
+import {Message} from './message.js'
 export let Game = {
-
+SPACING: 1.1,
   display: {
-    SPACING: 1.1,
     main: {
       w: 80,
       h: 24,
@@ -28,10 +28,13 @@ export let Game = {
     win: '',
     lose: '',
     cache: '',
+    persistence: '',
   },
   curMode: '',
 
   init: function() {
+    console.dir(this);
+    console.dir(ROT);
     this._randomSeed = 5 + Math.floor(Math.random()*100000);
     //this._randomSeed = 76250;
     console.log("using random seed "+this._randomSeed);
@@ -40,16 +43,16 @@ export let Game = {
     this.display.main.o = new ROT.Display({
       width: this.display.main.w,
       height: this.display.main.h,
-      spacing: this.display.SPACING});
+      spacing: this.SPACING});
     this.display.avatar.o = new ROT.Display({
       width: this.display.avatar.w,
       height: this.display.avatar.h,
-      spacing: this.display.SPACING});
+      spacing: this.SPACING});
     this.display.message.o = new ROT.Display({
       width: this.display.message.w,
       height: this.display.message.h,
-      spacing: this.display.SPACING});
-
+      spacing: this.SPACING});
+    Message.targetDisplay = this.display.message.o
     this.setupModes();
     this.switchMode('startup');
   },
@@ -60,14 +63,17 @@ export let Game = {
     this.modes.win = new WinMode(this);
     this.modes.lose = new LoseMode(this);
     this.modes.cache = new CacheMode(this);
+    this.modes.persistence = new PersistenceMode(this);
   },
 
   switchMode: function(newModeName){
-    if(this.curMode){
+    if (this.curMode) {
       this.curMode.exit();
+      this.render();
     }
     this.curMode = this.modes[newModeName];
-    if (this.curmode){
+    if (this.curMode){
+      console.log(this.curMode)
       this.curMode.enter();
     }
   },
@@ -86,18 +92,16 @@ export let Game = {
   },
 
   renderAvatar: function() {
-    this.curMode.render(this.display.avatar.o);
+    //this.curMode.render(this.display.avatar.o);
   },
-
 
   renderMessage: function() {
-    this.curMode.render(this.display.message.o);
+    Message.render(this.display.message.o);
   },
-
 
   renderMain: function() {
     //if(this.curMode.hasOwnProperty('render')){
-      this.curMode.render(this.display.main.o);
+    this.curMode.render(this.display.main.o);
     //}
   },
 
