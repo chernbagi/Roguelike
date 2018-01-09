@@ -1,12 +1,10 @@
-export function utilTest() {
-  console.log("this is a util function<br/>");
-}
-
-let randStringCharSource = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('');
-export function randomString(len = 8) {
-  var res='';
-    for (var i=0; i<len; i++) {
-        res += randStringCharSource.random();
+export function init2DArray(xdim, ydim, initialValue){
+  let a = []
+  for(let x=0; x < xdim; x++){
+    a.push([]);
+    for (let y = 0; y < ydim; y++){
+      a[x].push(initialValue);
     }
-    return res;
+  }
+  return a;
 }

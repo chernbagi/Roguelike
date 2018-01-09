@@ -1,4 +1,5 @@
 import {Message} from './message.js';
+import {Map} from './map.js'
 
 class UIMode {
   constructor(Game){
@@ -47,10 +48,14 @@ export class StartupMode extends UIMode {
 export class PlayMode extends UIMode {
   enter(){
     Message.send("hit escape to create new, load, or save game")
+    if (! this.map){
+      this.map = new Map (4, 4);
+    }
   }
   render(display) {
     display.clear();
     display.drawText(30, 3, "w to win l to lose");
+    this.map.render(display, 0, 0);
   }
   handleInput(eventType, evt){
     console.log(evt)
