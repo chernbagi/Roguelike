@@ -24,6 +24,9 @@ class UIMode {
 }
 
 export class StartupMode extends UIMode {
+  enter () {
+    Message.clear()
+  }
   render(display) {
     display.clear();
     display.drawText(30, 6, "Hit any key to begin");
