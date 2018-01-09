@@ -14,8 +14,8 @@ export let Message = {
     this.curMessage = msg;
     this.cache = this.curMessage + "\n" + this.cache;
     if (this.curMessage.includes("\n")) {
-      if (this.cache.str.split(/\r\n|\r|\n/).length == 100){
-        this.cache = this.cache[0, this.cache.length - this.cache.str.split(/\r\n|\r|\n/)[100].length - 1]
+      if (this.cache.str.split(/\r\n|\r|\n/).length == 5){
+        this.cache = this.cache[0, this.cache.str.split(/\r\n|\r|\n/).length - this.cache.str.split(/\r\n|\r|\n/)[100].length - 1]
       }
     }
     this.render();

@@ -15,5 +15,3 @@ export class DisplaySymbol {
   }
 
 }
-
-console.dir(new DisplaySymbol('x'));
