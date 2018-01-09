@@ -1,5 +1,6 @@
 import {Message} from './message.js';
 import {Map} from './map.js'
+import {DisplaySymbol} from'./display_symbol.js'
 
 class UIMode {
   constructor(Game){
@@ -51,38 +52,53 @@ export class PlayMode extends UIMode {
     if (! this.map){
       this.map = new Map (40, 24);
     }
+    this.cameraMapX = 5;
+    this.cameraMapY = 8;
+    this.cameraSymbol = new DisplaySymbol('@', '#eb4');
   }
   render(display) {
     display.clear();
     display.drawText(30, 3, "w to win l to lose");
-    this.map.render(display, 0, 0);
+    this.map.render(display, this.cameraMapX, this.cameraMapY);
+    this.cameraSymbol.render(display, display.getOptions().width/2, display.getOptions().height/2)
   }
   handleInput(eventType, evt){
-    console.log(evt)
-    if (eventType == 'keyup' && evt.key == "w") {
-      console.dir(this);
-      console.log(this.Game);
-      this.Game.switchMode('win');
-      return true;
+    console.log(evt);
+    if (eventType == 'keyup') {
+      if (evt.key == "w") {
+        console.dir(this);
+        console.log(this.Game);
+        this.Game.switchMode('win');
+        return true;
+      }
+      if (evt.key == "l") {
+        console.dir(this);
+        console.log(this.Game);
+        this.Game.switchMode('lose');
+        return true;
+      }
+      if (evt.key == "c") {
+        console.dir(this);
+        console.log(this.Game);
+        this.Game.switchMode('cache');
+        return true;
+      }
+      if (evt.key == "Escape") {
+        console.dir(this);
+        console.log(this.Game);
+        this.Game.switchMode('persistence');
+        return true;
+      }
+      if (evt.key == "7") {
+        this.moveCamera(-1, -1);
+        return true;
+      }
     }
-    if (eventType == 'keyup' && evt.key == "l") {
-      console.dir(this);
-      console.log(this.Game);
-      this.Game.switchMode('lose');
-      return true;
-    }
-    if (eventType == 'keyup' && evt.key == "c") {
-      console.dir(this);
-      console.log(this.Game);
-      this.Game.switchMode('cache');
-      return true;
-    }
-    if (eventType == 'keyup' && evt.key == "Escape") {
-      console.dir(this);
-      console.log(this.Game);
-      this.Game.switchMode('persistence');
-      return true;
-    }
+  }
+  moveCamera(dx, dy){
+    this.cameraMapX += dx;
+    this.cameraMapY += dy;
+    return true;
   }
 }
 

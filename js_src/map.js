@@ -13,14 +13,25 @@ export class Map {
   render(display, cameraX, cameraY){
     let cx = 0;
     let cy = 0;
-    for(let xi=0;xi<this.xdim;xi++){
-      for(let yi=0;yi<this.ydim;yi++){
-        this.tileGrid[xi][yi].render(display, cx, cy);
+    let xstart = cameraX - Math.trunc(display.getOptions().width / 2);
+    let xend = xstart + display.getOptions().width;
+    let ystart = cameraY - Math.trunc(display.getOptions().height / 2);
+    let yend = ystart + display.getOptions().height;
+    for(let xi=xstart;xi<xend;xi++){
+      for(let yi=ystart;yi<yend;yi++){
+        this.getTile(xi, yi).render(display, cx, cy);
         cy++;
       }
       cy = 0;
       cx++;
     }
+  }
+
+  getTile(mapx, mapy){
+    if (mapx < 0 || mapx > this.xdim - 1 || mapy < 0 || mapy > this.ydim - 1){
+      return TILES.NULLTILE;
+    }
+    return this.tileGrid[mapx][mapy];
   }
 }
 
