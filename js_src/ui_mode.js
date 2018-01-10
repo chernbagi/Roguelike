@@ -1,6 +1,7 @@
 import {Message} from './message.js';
-import {Map} from './map.js'
+import {MapMaker} from './map.js'
 import {DisplaySymbol} from'./display_symbol.js'
+import {DATASTORE, clearDataStore} from './datastore.js';
 
 class UIMode {
   constructor(Game){
@@ -47,19 +48,48 @@ export class StartupMode extends UIMode {
 }
 
 export class PlayMode extends UIMode {
+  constructor(Game){
+    super(Game);
+    this.state = {
+      mapID: '',
+      cameraMapX: '',
+      cameraMapY: ''
+    };
+  }
+
   enter(){
-    Message.send("hit escape to create new, load, or save game")
-    if (! this.map){
-      this.map = new Map (40, 24);
+    Message.send("hit escape to enter persistence mode")
+    if (!this.state.mapID){
+      let m = MapMaker({xdim: 80, ydim: 24});
+      this.state.mapID = m.getID();
+      m.build();
     }
-    this.cameraMapX = 5;
-    this.cameraMapY = 8;
+
+    this.state.cameraMapX = 20;
+    this.state.cameraMapY = 12;
     this.cameraSymbol = new DisplaySymbol('@', '#eb4');
   }
+
+  toJSON() {
+    return JSON.stringify(this.state);
+  }
+  restoreFromState(stateDataString){
+    this.state = JSON.parse(stateDataString);
+  }
+
+  setupNewGame() {
+    let m = MapMaker({xdim: 80, ydim: 24});
+    this.state.mapID = m.getID();
+    m.build();
+    this.state.cameraMapX = 20;
+    this.state.cameraMapY = 12;
+    this.cameraSymbol = new DisplaySymbol('@', '#eb4');
+  }
+
   render(display) {
     display.clear();
     display.drawText(30, 3, "w to win l to lose");
-    this.map.render(display, this.cameraMapX, this.cameraMapY);
+    DATASTORE.MAPS[this.state.mapID].render(display, this.state.cameraMapX, this.state.cameraMapY);
     this.cameraSymbol.render(display, display.getOptions().width/2, display.getOptions().height/2)
   }
   handleInput(eventType, evt){
@@ -96,8 +126,8 @@ export class PlayMode extends UIMode {
     }
   }
   moveCamera(dx, dy){
-    this.cameraMapX += dx;
-    this.cameraMapY += dy;
+    this.state.cameraMapX += dx;
+    this.state.cameraMapY += dy;
     return true;
   }
 }
@@ -202,19 +232,31 @@ handleSave() {
   if (! this.localStorageAvailable()) {
       return;
   }
-  window.localStorage.setItem('savestate', this.Game.toJSON(this.Game))
+  window.localStorage.setItem('savestate', JSON.stringify(DATASTORE));
   console.log('save game')
   this.Game.hasSaved = true;
   Message.send('Game saved');
   this.Game.switchMode('play');
 }
+
 handleLoad() {
   if (! this.localStorageAvailable()) {
       return;
   }
   let restorationString = window.localStorage.getItem('savestate')
-  this.Game.fromJSON(restorationString);
-  console.log('load game')
+  let state = JSON.parse(restorationString);
+  clearDataStore();
+  DATASTORE.ID_SEQ = state.ID_SEQ;
+  DATASTORE.GAME = state.GAME;
+  this.Game.fromJSON(state.GAME);
+  for (let mapID in state.MAPS){
+    let mapData = JSON.parse(state.MAPS[mapID])
+    DATASTORE.MAPS[mapID] = MapMaker(mapData) //mapData.xdim, mapData.ydim, mapData.setRngState);
+    DATASTORE.MAPS[mapID].build();
+  }
+
+  console.log('post-load datastore')
+  console.dir(DATASTORE)
 }
 localStorageAvailable() {
     // NOTE: see https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API

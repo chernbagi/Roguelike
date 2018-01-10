@@ -2,6 +2,7 @@ import ROT from 'rot-js';
 import * as U from './util.js';
 import {StartupMode, PlayMode, WinMode, LoseMode, CacheMode, PersistenceMode} from './ui_mode.js';
 import {Message} from './message.js'
+import {DATASTORE} from './datastore.js'
 export let Game = {
 SPACING: 1.1,
   display: {
@@ -47,6 +48,7 @@ SPACING: 1.1,
       spacing: this.SPACING});
     Message.targetDisplay = this.display.message.o
     this.setupModes();
+    DATASTORE.GAME = this;
     this.switchMode('startup');
   },
 
@@ -70,9 +72,10 @@ SPACING: 1.1,
     }
   },
   setupNewGame: function(){
-    this._randomSeed = 5 + Math.floor(Math.random()*100000);
-    console.log("using random seed "+this._randomSeed);
-    ROT.RNG.setSeed(this._randomSeed);
+    this.randomSeed = 5 + Math.floor(Math.random()*100000);
+    console.log("using random seed "+this.randomSeed);
+    ROT.RNG.setSeed(this.randomSeed);
+    this.modes.play.setupNewGame();
   },
 
   getDisplay: function (displayId) {
@@ -120,12 +123,20 @@ SPACING: 1.1,
 
   toJSON: function() {
     let json = '';
-    json = JSON.stringify({rseed: this._randomSeed});
+    json = JSON.stringify({
+      rseed: this.randomSeed,
+      playModeState: this.modes.play,
+      });
     return json;
+  },
+
+  restoreFromState(stateData){
+    this.state = stateData;
   },
 
   fromJSON: function(json) {
     let state = JSON.parse(json);
-    this._randomSeed = state.rseed;
+    this.randomSeed = state.rseed;
+    this.modes.play.restoreFromState(state.playModeState);
   }
 };

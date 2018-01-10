@@ -20,7 +20,7 @@ class Tile {
 }
 
 export let TILES = {
-  NULLTILE: new Tile('nulltile', '#'),
+  NULLTILE: new Tile('nulltile', ' '),
   WALL: new Tile('wall', '#'),
   FLOOR: new Tile('floor', '.')
 }
