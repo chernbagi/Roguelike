@@ -9,18 +9,18 @@ import {DisplaySymbol} from './display_symbol.js';
 //   }
 // }
 
-class Tile {
-  constructor(name, chr, fg, bg){
-    this.sym = new DisplaySymbol(chr, fg, bg);
+class Tile extends DisplaySymbol{
+  constructor(template){
+    super(template);
     this.name = name;
   }
-  render(disp,x,y) {
-    this.sym.render(disp,x,y);
+  isA(name) {
+    return this.chr == '.';
   }
 }
 
 export let TILES = {
-  NULLTILE: new Tile('nulltile', ' '),
-  WALL: new Tile('wall', '#'),
-  FLOOR: new Tile('floor', '.')
+  NULLTILE: new Tile({name: 'nulltile', chr: ' '}),
+  WALL: new Tile({name: 'wall', chr: '#'}),
+  FLOOR: new Tile({name: 'floor', chr: '.'})
 }

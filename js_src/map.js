@@ -9,10 +9,11 @@ class Map {
     this.state = {};
     this.state.xdim = xdim || 1;
     this.state.ydim = ydim || 1;
-    //this.tileGrid = init2DArray(this.xdim, this.ydim, TILES.NULLTILE);
-    this.state.mapType = mapType || 'basic caves'
+    this.state.mapType = mapType || 'basic caves';
     this.state.setupRngState = ROT.RNG.getState();
     this.state.id = uniqueID('map-' + this.state.mapType);
+    this.state.entityIDtoMapPos = {}
+    this.state.mapPostoEntityID = {}
   }
 
   build () {
@@ -29,10 +30,56 @@ class Map {
   setYdim(newID) {this.state.ydim = newYdim;}
 
   getMapType() {return this.state.mapType;}
-  setMapType(newMaptypee) {this.state.mapType = newMaptypee;}
+  setMapType(newMapType) {this.state.mapType = newMapType;}
 
   getRngState() {return this.state.setupRngState;}
   setRngState(newRngState) {this.state.setupRngState = newRngState;}
+
+  updateEntityPosition(ent, newX, newY) {
+    console.log('hello');
+    console.dir(ent);
+    let oldPos = this.state.entityIDtoMapPos[ent.getID()];
+    delete this.state.mapPostoEntityID[oldPos];
+
+    this.state.mapPostoEntityID[`${newX},${newY}`] = ent.getID()
+    this.state.entityIDtoMapPos[ent.getID()] = `${newX},${newY}`
+  }
+
+  addEntityAt(ent, xPos, yPos) {
+    let pos = `${xPos},${yPos}`;
+    this.state.entityIDtoMapPos[ent.getID()] = pos;
+    this.state.mapPostoEntityID[pos] = ent.getID();
+    ent.setMapID(this.getID());
+    ent.setX(xPos);
+    ent.setY(yPos);
+    console.log('hello');
+    console.dir(ent);
+  }
+
+  addEntityAtRandomPosition(ent) {
+    let openPos = this.getRandomOpenPosition();
+    let p = openPos.split(',');
+    this.addEntityAt(ent, p[0], p[1]);
+  }
+
+
+  getRandomOpenPosition() {
+      let x = Math.trunc(ROT.RNG.getUniform()*this.state.xdim);
+      let y = Math.trunc(ROT.RNG.getUniform()*this.state.ydim);
+      if (this.isPositionOpen(x, y)) {
+        return `${x},${y}`;
+      }
+      return this.getRandomOpenPosition();
+  }
+
+  isPositionOpen(x, y) {
+    console.log(this.tileGrid[x][y])
+    if (this.tileGrid[x][y].isA('floor')) {
+
+      return true;
+    }
+    return false;
+  }
 
   render(display, cameraX, cameraY){
     let cx = 0;
@@ -43,7 +90,13 @@ class Map {
     let yend = ystart + display.getOptions().height;
     for(let xi=xstart;xi<xend;xi++){
       for(let yi=ystart;yi<yend;yi++){
-        this.getTile(xi, yi).render(display, cx, cy);
+        let pos = `${xi},${yi}`;
+        if (this.state.mapPostoEntityID[pos]) {
+          DATASTORE.ENTITIES[this.state.mapPostoEntityID[pos]].render(display, cx, cy);
+        }
+        else{
+          this.getTile(xi, yi).render(display, cx, cy);
+        }
         cy++;
       }
       cy = 0;
@@ -88,7 +141,7 @@ export function MapMaker(mapData) {
     m.setID(mapData.id);
   }
   if (mapData.setupRngState) {
-    m.setID(mapData.setupRngState);
+    m.setRngState(mapData.setupRngState);
   }
 
   DATASTORE.MAPS[m.getID()] = m;
