@@ -29,7 +29,8 @@ class UIMode {
 
 export class StartupMode extends UIMode {
   enter () {
-    Message.clear()
+    Message.clear();
+    console.dir(this);
   }
   render(display) {
     display.clear();
@@ -115,6 +116,10 @@ export class PlayMode extends UIMode {
         this.Game.switchMode('persistence');
         return true;
       }
+      if (evt.key == "h") {
+        this.Game.switchMode('help');
+        return true;
+      }
       if (evt.key == "w") {
         this.moveAvatar(0, -1);
         return true;
@@ -164,8 +169,6 @@ export class WinMode extends UIMode {
   }
   handleInput(eventType, evt){
     if (eventType == 'keyup' && evt.key == "r") {
-      console.dir(this);
-      console.log(this.Game);
       this.Game.switchMode('startup');
       return true;
     }
@@ -186,8 +189,6 @@ export class LoseMode extends UIMode {
   }
   handleInput(eventType, evt){
     if (eventType == 'keyup' && evt.key == "r") {
-      console.dir(this);
-      console.log(this.Game);
       this.Game.switchMode('startup');
       return true;
     }
@@ -204,18 +205,36 @@ export class CacheMode extends UIMode {
     display.drawText(1, 2, Message.cache)
   }
   handleInput(eventType, evt){
-    console.log(evt)
     if (eventType == 'keyup' && evt.key == "Escape") {
-      console.dir(this);
-      console.log(this.Game);
       this.Game.switchMode('play');
       return true;
     }
   }
 }
+
+export class HelpMode extends UIMode {
+  render(display) {
+    display.clear();
+    display.drawText(35, 1, "Help Mode:");
+    display.drawText(1, 2, "Playmode Controls: wasd to move, k to win, l to lose,");
+    display.drawText(1, 3, "c to enter cache mode, and esc to enter persistence mode");
+    display.drawText(1, 4, "persistence mode: n for new game, s to save, l to load, escape to exit");
+    display.drawText(1, 5, "cache mode: escape to exit");
+    display.drawText(1, 6, "upon winning or losing, hit r to retry");
+    display.drawText(30, 7, "escape to exit");
+  }
+  handleInput(eventType, evt){
+    if (eventType == 'keyup' && evt.key == "Escape") {
+      this.Game.switchMode('play');
+      return true;
+    }
+  }
+}
+
 export class PersistenceMode extends UIMode {
   enter(){
     Message.send("hit escape to return to your game")
+
   }
   render(display){
     display.clear();
@@ -226,7 +245,6 @@ export class PersistenceMode extends UIMode {
   handleInput(eventType, evt){
     if (eventType == 'keyup') {
       if (evt.key=="n" || evt.key == "N"){
-        console.log("new game");
         this.Game.setupNewGame();
         this.Game.switchMode('play');
         return(true);
@@ -254,6 +272,7 @@ handleSave() {
       return;
   }
   window.localStorage.setItem('savestate', JSON.stringify(DATASTORE));
+
   console.log('save game')
   this.Game.hasSaved = true;
   Message.send('Game saved');
@@ -269,12 +288,23 @@ handleLoad() {
   clearDataStore();
   DATASTORE.ID_SEQ = state.ID_SEQ;
   DATASTORE.GAME = state.GAME;
+
   this.Game.fromJSON(state.GAME);
   for (let mapID in state.MAPS){
-    let mapData = JSON.parse(state.MAPS[mapID])
-    DATASTORE.MAPS[mapID] = MapMaker(mapData) //mapData.xdim, mapData.ydim, mapData.setRngState);
+    let mapData = JSON.parse(state.MAPS[mapID]);
+    DATASTORE.MAPS[mapID] = MapMaker(mapData); //mapData.xdim, mapData.ydim, mapData.setRngState);
     DATASTORE.MAPS[mapID].build();
   }
+  for (let entID in state.ENTITIES){
+      DATASTORE.ENTITIES[entID] = JSON.parse(state.ENTITIES[entID]);
+      let ent = EntityFactory.create(DATASTORE.ENTITIES[entID].name);
+      if (DATASTORE.ENTITIES[entID].name == 'avatar') {
+        this.Game.modes.play.state.avatarID = ent.getID();
+      }
+      DATASTORE.MAPS[Object.keys(DATASTORE.MAPS)[0]].addEntityAt(ent, DATASTORE.ENTITIES[entID].x, DATASTORE.ENTITIES[entID].y)
+      delete DATASTORE.ENTITIES[entID];
+  }
+
 
   console.log('post-load datastore')
   console.dir(DATASTORE)

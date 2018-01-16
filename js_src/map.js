@@ -36,8 +36,6 @@ class Map {
   setRngState(newRngState) {this.state.setupRngState = newRngState;}
 
   updateEntityPosition(ent, newX, newY) {
-    console.log('hello');
-    console.dir(ent);
     let oldPos = this.state.entityIDtoMapPos[ent.getID()];
     delete this.state.mapPostoEntityID[oldPos];
 
@@ -52,8 +50,6 @@ class Map {
     ent.setMapID(this.getID());
     ent.setX(xPos);
     ent.setY(yPos);
-    console.log('hello');
-    console.dir(ent);
   }
 
   addEntityAtRandomPosition(ent) {

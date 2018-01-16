@@ -1,6 +1,6 @@
 import ROT from 'rot-js';
 import * as U from './util.js';
-import {StartupMode, PlayMode, WinMode, LoseMode, CacheMode, PersistenceMode} from './ui_mode.js';
+import {StartupMode, PlayMode, WinMode, LoseMode, CacheMode, HelpMode, PersistenceMode} from './ui_mode.js';
 import {Message} from './message.js'
 import {DATASTORE} from './datastore.js'
 export let Game = {
@@ -29,6 +29,7 @@ SPACING: 1.1,
     win: '',
     lose: '',
     cache: '',
+    help: '',
     persistence: '',
   },
   curMode: '',
@@ -58,6 +59,7 @@ SPACING: 1.1,
     this.modes.win = new WinMode(this);
     this.modes.lose = new LoseMode(this);
     this.modes.cache = new CacheMode(this);
+    this.modes.help = new HelpMode(this);
     this.modes.persistence = new PersistenceMode(this);
   },
 
