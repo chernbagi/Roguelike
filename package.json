@@ -1,7 +1,7 @@
 {
   "name": "weedstrikeroguelike",
   "version": "1.0.0",
-  "description": "A demo roguelike game using rot.js",
+  "description": "A roguelike game using rot.js",
   "main": "index.js",
   "directories": {
     "doc": "doc"
@@ -19,7 +19,7 @@
     "game",
     "roguelike"
   ],
-  "author": "Chris Warren",
+  "author": "Justin Berman",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/cwarren/weedstrikeroguelike/issues"

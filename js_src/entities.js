@@ -7,4 +7,12 @@ EntityFactory.learn({
   name: 'avatar',
   chr:'@',
   fg: '#eb4',
+  mixinNames: ['TimeTracker', 'WalkerCorporeal', 'PlayerMessage', 'HitPoints'],
+  maxHp: 10
+});
+
+EntityFactory.learn({
+  name: 'tree',
+  chr:'T',
+  fg: '#006400',
 });

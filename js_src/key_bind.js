@@ -1,4 +1,5 @@
 // //key binding for input handling
+import {DATASTORE} from './datastore.js'
 
 class keyBinder {
   constructor(Game){
@@ -16,7 +17,7 @@ export class StartupInput extends keyBinder {
   }
 }
 export class PlayInput extends keyBinder{
-  handleInput(eventType, evt){
+  handleInput(eventType, evt, moveAvatar){
     console.log(evt);
     if (eventType == 'keyup') {
       if (evt.key == "k") {
@@ -44,23 +45,25 @@ export class PlayInput extends keyBinder{
         return true;
       }
       if (evt.key == "w") {
-        this.moveAvatar(0, -1);
+        console.dir(this.Game.modes.play);
+        moveAvatar(0, -1);
         return true;
       }
       if (evt.key == "s") {
-        this.moveAvatar(0, 1);
+        moveAvatar(0, 1);
         return true;
       }
       if (evt.key == "a") {
-        this.moveAvatar(-1, 0);
+        moveAvatar(-1, 0);
         return true;
       }
       if (evt.key == "d") {
-        this.moveAvatar(1, 0);
+        moveAvatar(1, 0);
         return true;
       }
     }
   }
+}
 
 export class EndInput extends keyBinder {
   handleInput(eventType, evt) {
@@ -70,6 +73,7 @@ export class EndInput extends keyBinder {
     }
   }
 }
+
 export class HCInput extends keyBinder {
   handleInput(eventType, evt) {
     if (eventType == 'keyup' && evt.key == "Escape") {
@@ -80,7 +84,7 @@ export class HCInput extends keyBinder {
 }
 
 export class PersistenceInput extends keyBinder {
-  handleInput(eventType, evt){
+  handleInput(eventType, evt, handleSave, handleLoad){
     if (eventType == 'keyup') {
       if (evt.key=="n" || evt.key == "N"){
         this.Game.setupNewGame();
@@ -88,11 +92,11 @@ export class PersistenceInput extends keyBinder {
         return(true);
       }
       if (evt.key=="s" || evt.key=="S"){
-        this.handleSave();
+        handleSave();
         return(true);
       }
       if (evt.key== "l" || evt.key=="L"){
-        this.handleLoad();
+        handleLoad();
         this.Game.switchMode('play');
         return(true);
       }

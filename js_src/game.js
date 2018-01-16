@@ -72,6 +72,7 @@ SPACING: 1.1,
       console.log(this.curMode)
       this.curMode.enter();
     }
+    this.render();
   },
   setupNewGame: function(){
     this.randomSeed = 5 + Math.floor(Math.random()*100000);
@@ -94,7 +95,7 @@ SPACING: 1.1,
   },
 
   renderAvatar: function() {
-    //this.curMode.render(this.display.avatar.o);
+    this.curMode.renderAvatar(this.display.avatar.o);
   },
 
   renderMessage: function() {

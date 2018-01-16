@@ -1,8 +1,9 @@
 import {Message} from './message.js';
-import {MapMaker} from './map.js'
-import {DisplaySymbol} from'./display_symbol.js'
+import {MapMaker} from './map.js';
+import {DisplaySymbol} from'./display_symbol.js';
 import {DATASTORE, clearDataStore} from './datastore.js';
-import {EntityFactory} from './entities.js'
+import {EntityFactory} from './entities.js';
+import {StartupInput, PlayInput, EndInput, HCInput, PersistenceInput} from './key_bind.js';
 
 class UIMode {
   constructor(Game){
@@ -25,12 +26,18 @@ class UIMode {
     console.log("redering " + this.constructor.name);
     display.drawText(2, 2, "redering " + this.constructor.name);
   }
+  renderAvatar(display){
+    display.clear();
+  }
 }
 
 export class StartupMode extends UIMode {
   enter () {
     Message.clear();
     console.dir(this);
+    if (!this.startupHandler){
+      this.startupHandler = new StartupInput(this.Game);
+    }
   }
   render(display) {
     display.clear();
@@ -40,12 +47,7 @@ export class StartupMode extends UIMode {
     display.drawText(37, 5, "STRIKE");
   }
   handleInput(eventType, evt){
-    if (eventType == 'keyup') {
-      console.dir(this);
-      console.log(this.Game);
-      this.Game.switchMode('persistence');
-      return true;
-    }
+    return this.startupHandler.handleInput(eventType, evt);
   }
 }
 
@@ -60,8 +62,10 @@ export class PlayMode extends UIMode {
   }
 
   enter(){
-    super.enter();
     Message.send("hit escape to enter persistence mode")
+    if (!this.playHandler){
+      this.playHandler = new PlayInput(this.Game);
+    }
   }
 
   toJSON() {
@@ -78,65 +82,30 @@ export class PlayMode extends UIMode {
     this.state.cameraMapX = 0;
     this.state.cameraMapY = 0;
     let a = EntityFactory.create('avatar');
+    let t = EntityFactory.create('tree');
     this.state.avatarID = a.getID();
     m.addEntityAtRandomPosition(a);
+    m.addEntityAtRandomPosition(t);
     console.log('play mode - new game started');
     this.moveCameratoAvatar();
   }
 
   render(display) {
     display.clear();
-    display.drawText(30, 3, "w to win l to lose");
     DATASTORE.MAPS[this.state.mapID].render(display, this.state.cameraMapX, this.state.cameraMapY);
   }
+
+  renderAvatar(display){
+    display.clear();
+    display.drawText(0, 0, "AVATAR");
+    display.drawText(0, 2, "time: " + this.getAvatar().getTime());
+    display.drawText(0, 3, "location: " + this.getAvatar().getX() + ", " + this.getAvatar().getY());
+    display.drawText(0, 4, "Max HP: " + this.getAvatar().getMaxHp());
+    display.drawText(0, 5, "Current HP: " + this.getAvatar().getHp());
+  }
+
   handleInput(eventType, evt){
-    console.log(evt);
-    if (eventType == 'keyup') {
-      if (evt.key == "k") {
-        console.dir(this);
-        console.log(this.Game);
-        this.Game.switchMode('win');
-        return true;
-      }
-      if (evt.key == "l") {
-        console.dir(this);
-        console.log(this.Game);
-        this.Game.switchMode('lose');
-        return true;
-      }
-      if (evt.key == "c") {
-        console.dir(this);
-        console.log(this.Game);
-        this.Game.switchMode('cache');
-        return true;
-      }
-      if (evt.key == "Escape") {
-        console.dir(this);
-        console.log(this.Game);
-        this.Game.switchMode('persistence');
-        return true;
-      }
-      if (evt.key == "h") {
-        this.Game.switchMode('help');
-        return true;
-      }
-      if (evt.key == "w") {
-        this.moveAvatar(0, -1);
-        return true;
-      }
-      if (evt.key == "s") {
-        this.moveAvatar(0, 1);
-        return true;
-      }
-      if (evt.key == "a") {
-        this.moveAvatar(-1, 0);
-        return true;
-      }
-      if (evt.key == "d") {
-        this.moveAvatar(1, 0);
-        return true;
-      }
-    }
+    return this.playHandler.handleInput(eventType, evt, this.moveAvatar);
   }
   moveCamera(dx, dy){
     this.state.cameraMapX += dx;
@@ -144,7 +113,8 @@ export class PlayMode extends UIMode {
     return true;
   }
   moveAvatar(dx, dy) {
-    if(this.getAvatar().moveBy(dx, dy)) {
+    console.dir(this.getAvatar());
+    if(this.getAvatar().tryWalk(dx, dy)) {
       this.moveCameratoAvatar();
       return true;
     }
@@ -161,6 +131,9 @@ export class PlayMode extends UIMode {
 export class WinMode extends UIMode {
   enter(){
     Message.send("hit r to try again!")
+    if (!this.endHandler){
+      this.endHandler = new EndInput(this.Game);
+    }
   }
   render(display) {
     display.clear();
@@ -168,16 +141,16 @@ export class WinMode extends UIMode {
     display.drawText(37, 4, "WIN")
   }
   handleInput(eventType, evt){
-    if (eventType == 'keyup' && evt.key == "r") {
-      this.Game.switchMode('startup');
-      return true;
-    }
+    return this.endHandler.handleInput(eventType, evt);
   }
 }
 
 export class LoseMode extends UIMode {
   enter(){
     Message.send("hit r to try again!")
+    if (!this.endHandler){
+      this.endHandler = new EndInput(this.Game);
+    }
   }
   render(display) {
     display.clear();
@@ -188,16 +161,16 @@ export class LoseMode extends UIMode {
     Message.send("hit r to play again!")
   }
   handleInput(eventType, evt){
-    if (eventType == 'keyup' && evt.key == "r") {
-      this.Game.switchMode('startup');
-      return true;
-    }
+    return this.endHandler.handleInput(eventType, evt);
   }
 }
 
 export class CacheMode extends UIMode {
   enter(){
     Message.send("hit escape to return to your game")
+    if (!this.hcHandler){
+      this.hcHandler = new HCInput(this.Game);
+    }
   }
   render(display){
     display.clear();
@@ -205,14 +178,16 @@ export class CacheMode extends UIMode {
     display.drawText(1, 2, Message.cache)
   }
   handleInput(eventType, evt){
-    if (eventType == 'keyup' && evt.key == "Escape") {
-      this.Game.switchMode('play');
-      return true;
-    }
+    return this.hcHandler.handleInput(eventType, evt);
   }
 }
 
 export class HelpMode extends UIMode {
+  enter() {
+    if (!this.hcHandler){
+      this.hcHandler = new HCInput(this.Game);
+    }
+  }
   render(display) {
     display.clear();
     display.drawText(35, 1, "Help Mode:");
@@ -224,17 +199,16 @@ export class HelpMode extends UIMode {
     display.drawText(30, 7, "escape to exit");
   }
   handleInput(eventType, evt){
-    if (eventType == 'keyup' && evt.key == "Escape") {
-      this.Game.switchMode('play');
-      return true;
-    }
+    return this.hcHandler.handleInput(eventType, evt);
   }
 }
 
 export class PersistenceMode extends UIMode {
   enter(){
     Message.send("hit escape to return to your game")
-
+    if (!this.persistenceHandler){
+      this.persistenceHandler = new PersistenceInput(this.Game);
+    }
   }
   render(display){
     display.clear();
@@ -243,27 +217,7 @@ export class PersistenceMode extends UIMode {
     display.drawText(30, 5, "L to load game");
   }
   handleInput(eventType, evt){
-    if (eventType == 'keyup') {
-      if (evt.key=="n" || evt.key == "N"){
-        this.Game.setupNewGame();
-        this.Game.switchMode('play');
-        return(true);
-      }
-      if (evt.key=="s" || evt.key=="S"){
-        this.handleSave();
-        return(true);
-      }
-      if (evt.key== "l" || evt.key=="L"){
-        this.handleLoad();
-        this.Game.switchMode('play');
-        return(true);
-      }
-      if (evt.key == "Escape") {
-        this.Game.switchMode('play');
-        return(true);
-      }
-      return false;
-    }
+    return this.persistenceHandler.handleInput(eventType, evt, this.handleSave, this.handleLoad);
   }
 
 
