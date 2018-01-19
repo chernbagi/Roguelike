@@ -43,6 +43,11 @@ class Map {
     this.state.entityIDtoMapPos[ent.getID()] = `${newX},${newY}`
   }
 
+  extractEntity(ent){
+    delete this.state.mapPostoEntityID[this.state.entityIDtoMapPos[ent.getID()]];
+    delete this.state.entityIDtoMapPos[ent.getID()];
+    return ent;
+  }
   addEntityAt(ent, xPos, yPos) {
     let pos = `${xPos},${yPos}`;
     this.state.entityIDtoMapPos[ent.getID()] = pos;
@@ -71,10 +76,21 @@ class Map {
   isPositionOpen(x, y) {
     console.log(this.tileGrid[x][y])
     if (this.tileGrid[x][y].isA('floor')) {
-
       return true;
     }
     return false;
+  }
+
+  getTargetPositionInfo(x, y) {
+    let info = {
+      entity: '',
+      tile: this.getTile(x, y)
+    };
+    let entID = this.state.mapPostoEntityID[`${x},${y}`];
+    if (entID) {
+      info.entity = DATASTORE.ENTITIES[entID];
+    }
+    return info;
   }
 
   render(display, cameraX, cameraY){
@@ -110,7 +126,6 @@ class Map {
     }
     return this.tileGrid[mapx][mapy];
   }
-
 }
 
 let TILE_GRID_GENERATOR = {
@@ -119,7 +134,7 @@ let TILE_GRID_GENERATOR = {
     let gen = new ROT.Map.Cellular(xdim, ydim, {connected: true});
     let origRngState = ROT.RNG.getState();
     ROT.RNG.setState(rngState);
-    gen.randomize(.5);
+    gen.randomize(0);
     for (var i = 3; i > 0; i--){
       gen.create();
     }

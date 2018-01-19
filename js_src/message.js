@@ -13,15 +13,18 @@ export let Message = {
   send: function(msg){
     this.curMessage = msg;
     this.cache = this.curMessage + "\n" + this.cache;
-    if (this.cache.includes("\n")) {
+    if (this.cache) {
       if (this.cache.split("\n").length == 100){
         console.log('removing')
-        this.cache = this.cache[0, this.cache.split("\n").length - this.cache.split("\n")[100].length - 1]
+        this.cache = this.cache[0, this.cache.split("\n").length - this.cache.split("\n")[99].length - 1]
       }
     }
     this.render();
   },
   clear: function(){
     this.curMessage = '';
+  },
+  clearCache: function() {
+    this.cache = '';
   }
 };

@@ -1,4 +1,5 @@
 import {DATASTORE} from './datastore.js'
+import ROT from 'rot-js';
 
 export function init2DArray(xdim, ydim, initialValue){
   let a = []
@@ -19,4 +20,9 @@ export function uniqueID(tag) {
   id = `${tag ? tag + ' - ': ''}${DATASTORE.ID_SEQ} - ${id}`; // DATASTORE.ID_SEQ + '-' + id;
   DATASTORE.ID_SEQ++;
   return id;
+}
+
+export function randomBinary() {
+  let num = ROT.RNG.getUniform()
+  if (num <= 0.5) {return 0;} else {return 1;}
 }

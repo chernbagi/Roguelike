@@ -12,15 +12,25 @@ import {DisplaySymbol} from './display_symbol.js';
 class Tile extends DisplaySymbol{
   constructor(template){
     super(template);
-    this.name = name;
+    this.name = template.name;
+    this.passable = template.transparent || false;
+    this.transparent = template.transparent || false;
   }
+  isPassable() {return this.passable;}
+  isImpassable() {return !this.passable;}
+  setPassable(newVal) {this.passable = newVal;}
+
+  isTransparent() {return this.transparent;}
+  isOpaque() {return !this.transparent;}
+  setTransparent(newVal) {this.transparent = newVal;}
+
   isA(name) {
-    return this.chr == '.';
+    return this.name == name;
   }
 }
 
 export let TILES = {
-  NULLTILE: new Tile({name: 'nulltile', chr: ' '}),
-  WALL: new Tile({name: 'wall', chr: '#'}),
-  FLOOR: new Tile({name: 'floor', chr: '.'})
+  NULLTILE: new Tile({name: 'nulltile', chr: ' ', passable: false, transparent: false}),
+  WALL: new Tile({name: 'wall', chr: '#', passable: false, transparent: false}),
+  FLOOR: new Tile({name: 'floor', chr: '.', passable: true, transparent: true})
 }

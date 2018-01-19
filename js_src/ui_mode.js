@@ -4,6 +4,7 @@ import {DisplaySymbol} from'./display_symbol.js';
 import {DATASTORE, clearDataStore} from './datastore.js';
 import {EntityFactory} from './entities.js';
 import {StartupInput, PlayInput, EndInput, HCInput, PersistenceInput} from './key_bind.js';
+import {TIME_ENGINE, SCHEDULER} from './timing.js';
 
 class UIMode {
   constructor(Game){
@@ -43,8 +44,8 @@ export class StartupMode extends UIMode {
     display.clear();
     display.drawText(30, 6, "Hit any key to begin");
     display.drawText(35, 3, "Welcome to");
-    display.drawText(38, 4, "WEED");
-    display.drawText(37, 5, "STRIKE");
+    display.drawText(37, 4, "HERO'S");
+    display.drawText(36, 5, "GAMBIT");
   }
   handleInput(eventType, evt){
     return this.startupHandler.handleInput(eventType, evt);
@@ -66,6 +67,7 @@ export class PlayMode extends UIMode {
     if (!this.playHandler){
       this.playHandler = new PlayInput(this.Game);
     }
+    TIME_ENGINE.unlock();
   }
 
   toJSON() {
@@ -76,18 +78,23 @@ export class PlayMode extends UIMode {
   }
 
   setupNewGame() {
-    let m = MapMaker({xdim: 80, ydim: 24});
+    let m = MapMaker({xdim: 40, ydim: 12});
     this.state.mapID = m.getID();
     m.build();
     this.state.cameraMapX = 0;
     this.state.cameraMapY = 0;
     let a = EntityFactory.create('avatar');
-    let t = EntityFactory.create('tree');
     this.state.avatarID = a.getID();
     m.addEntityAtRandomPosition(a);
-    m.addEntityAtRandomPosition(t);
+    for (let i = 0; i < 3; i++) {
+      m.addEntityAtRandomPosition(EntityFactory.create('tree'));
+    }
+    for (let i = 0; i < 3; i++) {
+      m.addEntityAtRandomPosition(EntityFactory.create('soldier'));
+    }
     console.log('play mode - new game started');
     this.moveCameratoAvatar();
+    Message.clearCache();
   }
 
   render(display) {
@@ -98,14 +105,31 @@ export class PlayMode extends UIMode {
   renderAvatar(display){
     display.clear();
     display.drawText(0, 0, "AVATAR");
-    display.drawText(0, 2, "time: " + this.getAvatar().getTime());
-    display.drawText(0, 3, "location: " + this.getAvatar().getX() + ", " + this.getAvatar().getY());
+    display.drawText(0, 2, "Time: " + this.getAvatar().getTime());
+    display.drawText(0, 3, "Location: " + this.getAvatar().getX() + ", " + this.getAvatar().getY());
     display.drawText(0, 4, "Max HP: " + this.getAvatar().getMaxHp());
     display.drawText(0, 5, "Current HP: " + this.getAvatar().getHp());
   }
 
   handleInput(eventType, evt){
-    return this.playHandler.handleInput(eventType, evt, this.moveAvatar);
+    let eventOutput = this.playHandler.handleInput(eventType, evt);
+    if (eventOutput == 'w') {
+      this.moveAvatar(0, -1);
+      return true;
+    }
+    if (eventOutput == 's') {
+      this.moveAvatar(0, 1);
+      return true;
+    }
+    if (eventOutput == 'a') {
+      this.moveAvatar(-1, 0);
+      return true;
+    }
+    if (eventOutput == 'd') {
+      this.moveAvatar(1, 0);
+      return true;
+    }
+    return eventOutput;
   }
   moveCamera(dx, dy){
     this.state.cameraMapX += dx;
@@ -113,7 +137,6 @@ export class PlayMode extends UIMode {
     return true;
   }
   moveAvatar(dx, dy) {
-    console.dir(this.getAvatar());
     if(this.getAvatar().tryWalk(dx, dy)) {
       this.moveCameratoAvatar();
       return true;
@@ -126,6 +149,9 @@ export class PlayMode extends UIMode {
   }
   getAvatar() {
     return DATASTORE.ENTITIES[this.state.avatarID];
+  }
+  exit(){
+    TIME_ENGINE.lock();
   }
 }
 export class WinMode extends UIMode {
@@ -217,53 +243,76 @@ export class PersistenceMode extends UIMode {
     display.drawText(30, 5, "L to load game");
   }
   handleInput(eventType, evt){
-    return this.persistenceHandler.handleInput(eventType, evt, this.handleSave, this.handleLoad);
+    let eventOutput = this.persistenceHandler.handleInput(eventType, evt);
+    if (eventOutput == "s" || eventOutput == "S") {
+      this.handleSave();
+      return true;
+    }
+    if (eventOutput == "l" || eventOutput == "L"){
+      this.handleLoad();
+      return true;
+    }
+    return eventOutput;
   }
 
+  handleSave() {
+    if (! this.localStorageAvailable()) {
+        return;
+    }
+    window.localStorage.setItem('savestate', JSON.stringify(DATASTORE));
 
-handleSave() {
-  if (! this.localStorageAvailable()) {
-      return;
-  }
-  window.localStorage.setItem('savestate', JSON.stringify(DATASTORE));
-
-  console.log('save game')
-  this.Game.hasSaved = true;
-  Message.send('Game saved');
-  this.Game.switchMode('play');
-}
-
-handleLoad() {
-  if (! this.localStorageAvailable()) {
-      return;
-  }
-  let restorationString = window.localStorage.getItem('savestate')
-  let state = JSON.parse(restorationString);
-  clearDataStore();
-  DATASTORE.ID_SEQ = state.ID_SEQ;
-  DATASTORE.GAME = state.GAME;
-
-  this.Game.fromJSON(state.GAME);
-  for (let mapID in state.MAPS){
-    let mapData = JSON.parse(state.MAPS[mapID]);
-    DATASTORE.MAPS[mapID] = MapMaker(mapData); //mapData.xdim, mapData.ydim, mapData.setRngState);
-    DATASTORE.MAPS[mapID].build();
-  }
-  for (let entID in state.ENTITIES){
-      DATASTORE.ENTITIES[entID] = JSON.parse(state.ENTITIES[entID]);
-      let ent = EntityFactory.create(DATASTORE.ENTITIES[entID].name);
-      if (DATASTORE.ENTITIES[entID].name == 'avatar') {
-        this.Game.modes.play.state.avatarID = ent.getID();
-      }
-      DATASTORE.MAPS[Object.keys(DATASTORE.MAPS)[0]].addEntityAt(ent, DATASTORE.ENTITIES[entID].x, DATASTORE.ENTITIES[entID].y)
-      delete DATASTORE.ENTITIES[entID];
+    console.log('save game')
+    this.Game.hasSaved = true;
+    Message.send('Game saved');
+    this.Game.switchMode('play');
   }
 
+  handleLoad() {
+    if (! this.localStorageAvailable()) {
+        return;
+    }
 
-  console.log('post-load datastore')
-  console.dir(DATASTORE)
-}
-localStorageAvailable() {
+    let restorationString = window.localStorage.getItem('savestate')
+    console.log(restorationString);
+    let state = JSON.parse(restorationString);
+    clearDataStore();
+    DATASTORE.ID_SEQ = state.ID_SEQ;
+
+    DATASTORE.GAME = state.GAME;
+    this.Game.fromJSON(state.GAME);
+
+    for (let mapID in state.MAPS){
+      let mapData = JSON.parse(state.MAPS[mapID]);
+      DATASTORE.MAPS[mapID] = MapMaker(mapData); //mapData.xdim, mapData.ydim, mapData.setRngState);
+      DATASTORE.MAPS[mapID].build();
+    }
+    for (let entID in state.ENTITIES){
+        DATASTORE.ENTITIES[entID] = JSON.parse(state.ENTITIES[entID]);
+        let ent = EntityFactory.create(DATASTORE.ENTITIES[entID].name);
+        let entState = JSON.parse(state.ENTITIES[entID])
+        console.dir(entState);
+        if (entState._HitPoints) {
+          ent.state._HitPoints.maxHp = entState._HitPoints.maxHp;
+          ent.state._HitPoints.curHp = entState._HitPoints.curHp;
+        }
+        if (entState._TimeTracker) {
+          ent.state._TimeTracker.timeTaken = entState._TimeTracker.timeTaken;
+        }
+        if (entState._MeleeAttacker) {
+          ent.state._MeleeAttacker.meleeDamage = entState._MeleeAttacker.meleeDamage;
+        }
+
+        if (DATASTORE.ENTITIES[entID].name == 'avatar') {
+          this.Game.modes.play.state.avatarID = ent.getID();
+        }
+        DATASTORE.MAPS[Object.keys(DATASTORE.MAPS)[0]].addEntityAt(ent, DATASTORE.ENTITIES[entID].x, DATASTORE.ENTITIES[entID].y)
+        delete DATASTORE.ENTITIES[entID];
+    }
+    console.log('post-load datastore');
+    console.dir(DATASTORE);
+    this.Game.switchMode('play');
+  }
+  localStorageAvailable() {
     // NOTE: see https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API
     try {
       var x = '__storage_test__';

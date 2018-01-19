@@ -1,8 +1,10 @@
 import ROT from 'rot-js';
 import * as U from './util.js';
 import {StartupMode, PlayMode, WinMode, LoseMode, CacheMode, HelpMode, PersistenceMode} from './ui_mode.js';
-import {Message} from './message.js'
-import {DATASTORE} from './datastore.js'
+import {Message} from './message.js';
+import {DATASTORE} from './datastore.js';
+import {TIME_ENGINE} from './timing.js';
+
 export let Game = {
 SPACING: 1.1,
   display: {
@@ -79,6 +81,7 @@ SPACING: 1.1,
     console.log("using random seed "+this.randomSeed);
     ROT.RNG.setSeed(this.randomSeed);
     this.modes.play.setupNewGame();
+    TIME_ENGINE.start();
   },
 
   getDisplay: function (displayId) {
