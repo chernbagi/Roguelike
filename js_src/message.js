@@ -15,7 +15,6 @@ export let Message = {
     this.cache = this.curMessage + "\n" + this.cache;
     if (this.cache) {
       if (this.cache.split("\n").length == 100){
-        console.log('removing')
         this.cache = this.cache[0, this.cache.split("\n").length - this.cache.split("\n")[99].length - 1]
       }
     }

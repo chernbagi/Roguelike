@@ -273,13 +273,14 @@ export class PersistenceMode extends UIMode {
     }
 
     let restorationString = window.localStorage.getItem('savestate')
-    console.log(restorationString);
     let state = JSON.parse(restorationString);
     clearDataStore();
     DATASTORE.ID_SEQ = state.ID_SEQ;
 
     DATASTORE.GAME = state.GAME;
     this.Game.fromJSON(state.GAME);
+
+    console.dir(state);
 
     for (let mapID in state.MAPS){
       let mapData = JSON.parse(state.MAPS[mapID]);
@@ -290,7 +291,6 @@ export class PersistenceMode extends UIMode {
         DATASTORE.ENTITIES[entID] = JSON.parse(state.ENTITIES[entID]);
         let ent = EntityFactory.create(DATASTORE.ENTITIES[entID].name);
         let entState = JSON.parse(state.ENTITIES[entID])
-        console.dir(entState);
         if (entState._HitPoints) {
           ent.state._HitPoints.maxHp = entState._HitPoints.maxHp;
           ent.state._HitPoints.curHp = entState._HitPoints.curHp;
@@ -302,11 +302,13 @@ export class PersistenceMode extends UIMode {
           ent.state._MeleeAttacker.meleeDamage = entState._MeleeAttacker.meleeDamage;
         }
 
-        if (DATASTORE.ENTITIES[entID].name == 'avatar') {
-          this.Game.modes.play.state.avatarID = ent.getID();
-        }
-        DATASTORE.MAPS[Object.keys(DATASTORE.MAPS)[0]].addEntityAt(ent, DATASTORE.ENTITIES[entID].x, DATASTORE.ENTITIES[entID].y)
-        delete DATASTORE.ENTITIES[entID];
+        DATASTORE.MAPS[Object.keys(DATASTORE.MAPS)[0]].addEntityAt(ent, DATASTORE.ENTITIES[entID].x, DATASTORE.ENTITIES[entID].y);
+        DATASTORE.ENTITIES[entID] = ent;
+        delete DATASTORE.ENTITIES[ent.getID()]
+        DATASTORE.ENTITIES[entID].state.id = entID;
+        let pos = `${DATASTORE.ENTITIES[entID].state.x},${DATASTORE.ENTITIES[entID].state.y}`;
+        ent.getMap().state.mapPostoEntityID[pos] = entID;
+
     }
     console.log('post-load datastore');
     console.dir(DATASTORE);

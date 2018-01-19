@@ -37,7 +37,7 @@ export class Entity extends MixableSymbol {
 
   destroy(){
     this.getMap().extractEntity(this);
-    delete DATASTORE[this.getID()];
+    delete DATASTORE.ENTITIES[this.getID()];
   }
 
   toJSON() {

@@ -46,6 +46,7 @@ class Map {
   extractEntity(ent){
     delete this.state.mapPostoEntityID[this.state.entityIDtoMapPos[ent.getID()]];
     delete this.state.entityIDtoMapPos[ent.getID()];
+    console.log('extrating')
     return ent;
   }
   addEntityAt(ent, xPos, yPos) {

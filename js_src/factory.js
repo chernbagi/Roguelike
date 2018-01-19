@@ -18,6 +18,7 @@ export class Factory {
     let product = new this.productClass(this.knownTemplates[templateName]);
     product.state.name = product.name;
     DATASTORE[this.datastoreNameSpace][product.getID()] = product;
+    console.log(DATASTORE[this.datastoreNameSpace][product.getID()])
     return product;
   }
 }
