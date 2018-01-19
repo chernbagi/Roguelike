@@ -290,6 +290,7 @@ export class PersistenceMode extends UIMode {
     for (let entID in state.ENTITIES){
         DATASTORE.ENTITIES[entID] = JSON.parse(state.ENTITIES[entID]);
         let ent = EntityFactory.create(DATASTORE.ENTITIES[entID].name);
+
         let entState = JSON.parse(state.ENTITIES[entID])
         if (entState._HitPoints) {
           ent.state._HitPoints.maxHp = entState._HitPoints.maxHp;
@@ -303,11 +304,15 @@ export class PersistenceMode extends UIMode {
         }
 
         DATASTORE.MAPS[Object.keys(DATASTORE.MAPS)[0]].addEntityAt(ent, DATASTORE.ENTITIES[entID].x, DATASTORE.ENTITIES[entID].y);
+        console.dir(ent.getMap().state.mapPostoEntityID);
+        console.dir(ent.getMap().state.entityIDtoMapPos);
+        delete ent.getMap().state.mapPostoEntityID[ent.getMap().state.entityIDtoMapPos[ent.getID()]];
         DATASTORE.ENTITIES[entID] = ent;
         delete DATASTORE.ENTITIES[ent.getID()]
         DATASTORE.ENTITIES[entID].state.id = entID;
         let pos = `${DATASTORE.ENTITIES[entID].state.x},${DATASTORE.ENTITIES[entID].state.y}`;
         ent.getMap().state.mapPostoEntityID[pos] = entID;
+        ent.getMap().state.entityIDtoMapPos[ent.getID()] = pos;
 
     }
     console.log('post-load datastore');
