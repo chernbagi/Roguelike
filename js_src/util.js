@@ -21,8 +21,3 @@ export function uniqueID(tag) {
   DATASTORE.ID_SEQ++;
   return id;
 }
-
-export function randomBinary() {
-  let num = ROT.RNG.getUniform()
-  if (num <= 0.5) {return 0;} else {return 1;}
-}

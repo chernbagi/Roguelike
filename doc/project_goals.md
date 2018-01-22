@@ -1,6 +1,6 @@
 * timing Engine - done
 * create more enemy types - done
-* fix datastore
+* fix datastore - done
 * implement multiple maps
 * implement increasing difficulty
 * implement leveling/stats

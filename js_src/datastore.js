@@ -8,6 +8,7 @@ export function clearDataStore(){
     ID_SEQ: 0,
     GAME: {},
     MAPS: {},
-    ENTITIES: {}
+    ENTITIES: {},
+    LEVEL: {}
   }
 }

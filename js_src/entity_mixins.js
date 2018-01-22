@@ -2,7 +2,6 @@
 import {Message} from './message.js';
 import {TIME_ENGINE, SCHEDULER} from './timing.js';
 import ROT from 'rot-js';
-import {randomBinary} from './util.js'
 
 
 let exampleMixin = {
@@ -121,7 +120,6 @@ export let WalkerCorporeal = {
         this.raiseMixinEvent('wallBlocked', {reason: 'there\'s something in the way'});
         return false;
       }
-
     }
   }
 };
@@ -269,9 +267,17 @@ export let ActorWanderer = {
       } else if (ally[0]){
         this.tryWalk(-ally[1], -ally[2]);
       } else {
-        this.tryWalk(randomBinary(), randomBinary());
+        let num = ROT.RNG.getUniform();
+        if (num < 0.25) {
+          this.tryWalk(1, 0);
+        } else if (0.25 <= num < 0.5) {
+          this.tryWalk(-1, 0);
+        } else if (0.5 <= num < 0.75){
+          this.tryWalk(0, 1);
+        } else {
+          this.tryWalk(0, -1);
+        }
       }
-
     },
     act: function() {
       console.log('enemy turn');
@@ -331,7 +337,9 @@ export let ActorPlayer = {
       if (evtData.spender.state._ActorPlayer.spentActions >= evtData.spender.getAllowedActionDuration()){
         evtData.spender.state._ActorPlayer.spentActions = 0;
         SCHEDULER.next();
-        TIME_ENGINE.unlock();
+        if(TIME_ENGINE._lock == 2) {
+          TIME_ENGINE.unlock();
+        }
       }
     }
   }

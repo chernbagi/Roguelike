@@ -40,11 +40,10 @@ export class Entity extends MixableSymbol {
   destroy(){
     this.getMap().extractEntity(this);
     console.dir(this);
-    console.dir(DATASTORE);
     SCHEDULER.remove(this);
     console.dir(SCHEDULER);
-    console.log('destroyed');
     delete DATASTORE.ENTITIES[this.getID()];
+    this.getMap().nextLevel();
   }
 
   toJSON() {

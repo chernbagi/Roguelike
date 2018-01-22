@@ -13,8 +13,9 @@ class Map {
     this.state.mapType = mapType || 'basic caves';
     this.state.setupRngState = ROT.RNG.getState();
     this.state.id = uniqueID('map-' + this.state.mapType);
-    this.state.entityIDtoMapPos = {}
-    this.state.mapPostoEntityID = {}
+    this.state.entityIDtoMapPos = {};
+    this.state.mapPostoEntityID = {};
+    this.state.nextLevel = false;
   }
 
   build () {
@@ -64,7 +65,16 @@ class Map {
     let p = openPos.split(',');
     this.addEntityAt(ent, p[0], p[1]);
   }
-
+  nextLevel() {
+    for (let entID in DATASTORE.ENTITIES) {
+      if (DATASTORE.ENTITIES[entID].name == 'soldier' || DATASTORE.ENTITIES[entID].name == 'centaurion' || DATASTORE.ENTITIES[entID].name == 'general'){
+        this.state.nextLevel = false;
+        break;
+      } else {
+        this.state.nextLevel = true;
+      }
+    }
+  }
 
   getRandomOpenPosition() {
       let x = Math.trunc(ROT.RNG.getUniform()*this.state.xdim);
@@ -106,7 +116,7 @@ class Map {
       for(let yi=ystart;yi<yend;yi++){
         let pos = `${xi},${yi}`;
         if (this.state.mapPostoEntityID[pos]) {
-          console.dir(SCHEDULER);
+          console.dir(DATASTORE.ENTITIES)
           console.log(this.state.mapPostoEntityID[pos]);
           DATASTORE.ENTITIES[this.state.mapPostoEntityID[pos]].render(display, cx, cy);
         }

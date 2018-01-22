@@ -61,7 +61,8 @@ export class PlayMode extends UIMode {
     this.state = {
       mapID: '',
       cameraMapX: '',
-      cameraMapY: ''
+      cameraMapY: '',
+      level: 1
     };
   }
 
@@ -70,7 +71,7 @@ export class PlayMode extends UIMode {
     if (!this.playHandler){
       this.playHandler = new PlayInput(this.Game);
     }
-    TIME_ENGINE.unlock();
+    //TIME_ENGINE.unlock();
   }
 
   toJSON() {
@@ -99,11 +100,47 @@ export class PlayMode extends UIMode {
     console.log('play mode - new game started');
     this.moveCameratoAvatar();
     Message.clearCache();
+    DATASTORE.GAME = this.Game;
+    DATASTORE.LEVEL = this.state.level;
+  }
+
+  setupNewLevel() {
+    SCHEDULER.clear();
+    let x = DATASTORE.ENTITIES[this.getAvatar().getID()].state.x;
+    let y = DATASTORE.ENTITIES[this.getAvatar().getID()].state.y;
+    let avatarID = DATASTORE.ENTITIES[this.getAvatar().getID()];
+
+    this.state.level = DATASTORE.LEVEL;
+
+    clearDataStore();
+    DATASTORE.GAME = this.Game;
+    Message.send('Level ' + this.state.level*1);
+    let m = MapMaker({xdim: 40, ydim: 12});
+    this.state.mapID = m.getID();
+    m.build();
+    this.state.cameraMapX = 0;
+    this.state.cameraMapY = 0;
+    let a = EntityFactory.create('avatar');
+    this.state.avatarID = a.getID()
+    m.addEntityAt(a, x, y);
+    for (let i = 0; i < 3; i++) {
+      m.addEntityAtRandomPosition(EntityFactory.create('tree'));
+    }
+    for (let i = 0; i < 3; i++) {
+      m.addEntityAtRandomPosition(EntityFactory.create('soldier'));
+    }
+    this.moveCameratoAvatar();
+    this.state.level += 1;
+    DATASTORE.LEVEL = this.state.level;
+    this.render(this.Game.display.main.o);
   }
 
   render(display) {
     display.clear();
     DATASTORE.MAPS[this.state.mapID].render(display, this.state.cameraMapX, this.state.cameraMapY);
+    if (DATASTORE.MAPS[this.state.mapID].state.nextLevel == true){
+      this.setupNewLevel();
+    }
   }
 
   renderAvatar(display){
@@ -279,11 +316,16 @@ export class PersistenceMode extends UIMode {
 
     let restorationString = window.localStorage.getItem('savestate')
     let state = JSON.parse(restorationString);
+    console.dir(restorationString);
     clearDataStore();
     DATASTORE.ID_SEQ = state.ID_SEQ;
+    DATASTORE.LEVEL = state.LEVEL;
     console.log(state.GAME);
-    if (state.GAME && !state.GAME.rseed){
+    if (!state.GAME.rseed){
       DATASTORE.GAME = JSON.parse(state.GAME);
+      console.log(DATASTORE.GAME.playModeState);
+      DATASTORE.GAME.playModeState = JSON.parse(DATASTORE.GAME.playModeState);
+      console.log(DATASTORE.GAME.playModeState);
     } else {
       DATASTORE.GAME = state.GAME
     }
@@ -308,7 +350,7 @@ export class PersistenceMode extends UIMode {
         if (entState._MeleeAttacker) {
           ent.state._MeleeAttacker.meleeDamage = entState._MeleeAttacker.meleeDamage;
         }
-
+        SCHEDULER.remove(state.ENTITIES[entID]);
         DATASTORE.MAPS[Object.keys(DATASTORE.MAPS)[0]].addEntityAt(ent, DATASTORE.ENTITIES[entID].x, DATASTORE.ENTITIES[entID].y);
         delete ent.getMap().state.mapPostoEntityID[ent.getMap().state.entityIDtoMapPos[ent.getID()]];
         delete ent.getMap().state.entityIDtoMapPos[ent.getID()];
@@ -319,8 +361,7 @@ export class PersistenceMode extends UIMode {
         let pos = `${DATASTORE.ENTITIES[entID].state.x},${DATASTORE.ENTITIES[entID].state.y}`;
         ent.getMap().state.mapPostoEntityID[pos] = entID;
         ent.getMap().state.entityIDtoMapPos[ent.getID()] = pos;
-        console.dir(ent.getMap().state.mapPostoEntityID);
-        console.dir(ent.getMap().state.entityIDtoMapPos);
+        SCHEDULER.add(ent);
     }
     console.log('post-load datastore');
     console.dir(DATASTORE);
