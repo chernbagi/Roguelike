@@ -1,7 +1,8 @@
 import {TILES} from './tile.js';
-import {init2DArray, uniqueID} from './util.js'
+import {init2DArray, uniqueID} from './util.js';
 import ROT from 'rot-js';
-import {DATASTORE} from './datastore.js'
+import {DATASTORE} from './datastore.js';
+import {SCHEDULER} from './timing.js';
 
 
 class Map {
@@ -47,7 +48,6 @@ class Map {
     delete this.state.mapPostoEntityID[this.state.entityIDtoMapPos[ent.getID()]];
     delete this.state.entityIDtoMapPos[ent.getID()];
     console.log('extrating')
-    console.dir(this.state.entityIDtoMapPos);
     return ent;
   }
   addEntityAt(ent, xPos, yPos) {
@@ -106,6 +106,7 @@ class Map {
       for(let yi=ystart;yi<yend;yi++){
         let pos = `${xi},${yi}`;
         if (this.state.mapPostoEntityID[pos]) {
+          console.dir(SCHEDULER);
           console.log(this.state.mapPostoEntityID[pos]);
           DATASTORE.ENTITIES[this.state.mapPostoEntityID[pos]].render(display, cx, cy);
         }

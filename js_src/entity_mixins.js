@@ -169,10 +169,13 @@ export let HitPoints = {
     'damaged': function(evtData) {
       this.loseHp(evtData.damageAmount);
       evtData.src.raiseMixinEvent('damages',{target: this, damageAmount: evtData.damageAmount});
+      console.log('ploop');
+      console.log(this.getHp());
       if (this.getHp() <= 0) {
+        console.log('ploop');
+        SCHEDULER.remove(this);
         evtData.src.raiseMixinEvent('kills',{target: this});
         this.destroy();
-        SCHEDULER.remove(this);
       }
     }
   }
@@ -198,6 +201,7 @@ export let MeleeAttacker = {
   },
   LISTENERS: {
     'bumpEntity': function(evtData) {
+      console.log('bumped');
       evtData.target.raiseMixinEvent('damaged', {src:this, damageAmount:this.getMeleeDamage()});
       this.raiseMixinEvent('attacks', {actor:this, target:evtData.target})
     }
@@ -236,6 +240,7 @@ export let ActorWanderer = {
     findNearbyAvatar(){
       for (let i = -1; i <= 1; i++){
         for (let j = -1; j <= 1; j++){
+          console.dir(this);
           let tileInfo = this.getMap().getTargetPositionInfo(this.state.x*1 + i, this.state.y*1 + j);
           if (tileInfo.entity && tileInfo.entity.state.name == "avatar") {
             console.log('avatar found');

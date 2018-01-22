@@ -51,8 +51,8 @@ SPACING: 1.1,
       spacing: this.SPACING});
     Message.targetDisplay = this.display.message.o
     this.setupModes();
-    DATASTORE.GAME = this;
     this.switchMode('startup');
+    DATASTORE.GAME = this;
   },
 
   setupModes: function(){

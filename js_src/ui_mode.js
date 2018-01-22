@@ -34,6 +34,9 @@ class UIMode {
 
 export class StartupMode extends UIMode {
   enter () {
+    console.log('DATASTORE')
+    console.dir(DATASTORE);
+    clearDataStore();
     Message.clear();
     console.dir(this);
     if (!this.startupHandler){
@@ -78,6 +81,7 @@ export class PlayMode extends UIMode {
   }
 
   setupNewGame() {
+    SCHEDULER.clear();
     let m = MapMaker({xdim: 40, ydim: 12});
     this.state.mapID = m.getID();
     m.build();
@@ -187,6 +191,7 @@ export class LoseMode extends UIMode {
     Message.send("hit r to play again!")
   }
   handleInput(eventType, evt){
+    this.endHandler = new EndInput(this.Game);
     return this.endHandler.handleInput(eventType, evt);
   }
 }
@@ -276,11 +281,12 @@ export class PersistenceMode extends UIMode {
     let state = JSON.parse(restorationString);
     clearDataStore();
     DATASTORE.ID_SEQ = state.ID_SEQ;
-
-    DATASTORE.GAME = state.GAME;
-    this.Game.fromJSON(state.GAME);
-
-    console.dir(state);
+    console.log(state.GAME);
+    if (state.GAME && !state.GAME.rseed){
+      DATASTORE.GAME = JSON.parse(state.GAME);
+    } else {
+      DATASTORE.GAME = state.GAME
+    }
 
     for (let mapID in state.MAPS){
       let mapData = JSON.parse(state.MAPS[mapID]);
@@ -304,16 +310,17 @@ export class PersistenceMode extends UIMode {
         }
 
         DATASTORE.MAPS[Object.keys(DATASTORE.MAPS)[0]].addEntityAt(ent, DATASTORE.ENTITIES[entID].x, DATASTORE.ENTITIES[entID].y);
-        console.dir(ent.getMap().state.mapPostoEntityID);
-        console.dir(ent.getMap().state.entityIDtoMapPos);
         delete ent.getMap().state.mapPostoEntityID[ent.getMap().state.entityIDtoMapPos[ent.getID()]];
+        delete ent.getMap().state.entityIDtoMapPos[ent.getID()];
+        SCHEDULER.remove(ent);
         DATASTORE.ENTITIES[entID] = ent;
         delete DATASTORE.ENTITIES[ent.getID()]
         DATASTORE.ENTITIES[entID].state.id = entID;
         let pos = `${DATASTORE.ENTITIES[entID].state.x},${DATASTORE.ENTITIES[entID].state.y}`;
         ent.getMap().state.mapPostoEntityID[pos] = entID;
         ent.getMap().state.entityIDtoMapPos[ent.getID()] = pos;
-
+        console.dir(ent.getMap().state.mapPostoEntityID);
+        console.dir(ent.getMap().state.entityIDtoMapPos);
     }
     console.log('post-load datastore');
     console.dir(DATASTORE);
