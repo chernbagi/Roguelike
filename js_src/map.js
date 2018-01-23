@@ -15,7 +15,6 @@ class Map {
     this.state.id = uniqueID('map-' + this.state.mapType);
     this.state.entityIDtoMapPos = {};
     this.state.mapPostoEntityID = {};
-    this.state.nextLevel = false;
   }
 
   build () {
@@ -59,23 +58,22 @@ class Map {
     ent.setX(xPos);
     ent.setY(yPos);
   }
-
   addEntityAtRandomPosition(ent) {
     let openPos = this.getRandomOpenPosition();
     let p = openPos.split(',');
     this.addEntityAt(ent, p[0], p[1]);
   }
   nextLevel() {
+    console.dir(DATASTORE.ENTITIES);
     for (let entID in DATASTORE.ENTITIES) {
-      if (DATASTORE.ENTITIES[entID].name == 'soldier' || DATASTORE.ENTITIES[entID].name == 'centaurion' || DATASTORE.ENTITIES[entID].name == 'general'){
-        this.state.nextLevel = false;
-        break;
-      } else {
-        this.state.nextLevel = true;
+      if (DATASTORE.ENTITIES[entID].name == 'soldier' || DATASTORE.ENTITIES[entID].name == 'centaurion'){
+        console.log('false');
+        return false;
       }
     }
+    console.log('true')
+    return true;
   }
-
   getRandomOpenPosition() {
       let x = Math.trunc(ROT.RNG.getUniform()*this.state.xdim);
       let y = Math.trunc(ROT.RNG.getUniform()*this.state.ydim);
@@ -84,7 +82,6 @@ class Map {
       }
       return this.getRandomOpenPosition();
   }
-
   isPositionOpen(x, y) {
     console.log(this.tileGrid[x][y])
     if (this.tileGrid[x][y].isA('floor')) {

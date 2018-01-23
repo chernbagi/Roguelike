@@ -100,7 +100,7 @@ export let WalkerCorporeal = {
 
       if (targetPositionInfo.entity){
         this.raiseMixinEvent('bumpEntity', {actor: this, target: targetPositionInfo.entity});
-        this.raiseMixinEvent('spendAction', {spender: this, spent: 5});
+        this.raiseMixinEvent('spendAction', {spender: this, spent: this.getAllowedActionDuration()});
         return false;
       } else {
         if (targetPositionInfo.tile.isImpassable()) {
@@ -268,13 +268,18 @@ export let ActorWanderer = {
         this.tryWalk(-ally[1], -ally[2]);
       } else {
         let num = ROT.RNG.getUniform();
+        console.log(num);
         if (num < 0.25) {
+          console.log(1);
           this.tryWalk(1, 0);
         } else if (0.25 <= num < 0.5) {
+          console.log(2);
           this.tryWalk(-1, 0);
         } else if (0.5 <= num < 0.75){
+          console.log(3);
           this.tryWalk(0, 1);
         } else {
+          console.log(4);
           this.tryWalk(0, -1);
         }
       }
@@ -288,7 +293,9 @@ export let ActorWanderer = {
   LISTENERS: {
     'spendAction': function(evtData) {
       evtData.spender.state._ActorWanderer.spentActions += evtData.spent;
+      console.log(evtData.spender.state._ActorWanderer.spentActions);
       if (evtData.spender.state._ActorWanderer.spentActions >= evtData.spender.getAllowedActionDuration()){
+        console.log('abc')
         SCHEDULER.next();
       }
     }
@@ -336,10 +343,10 @@ export let ActorPlayer = {
       evtData.spender.state._ActorPlayer.spentActions += evtData.spent;
       if (evtData.spender.state._ActorPlayer.spentActions >= evtData.spender.getAllowedActionDuration()){
         evtData.spender.state._ActorPlayer.spentActions = 0;
+        TIME_ENGINE.unlock();
         SCHEDULER.next();
-        if(TIME_ENGINE._lock == 2) {
-          TIME_ENGINE.unlock();
-        }
+        console.log(SCHEDULER);
+
       }
     }
   }

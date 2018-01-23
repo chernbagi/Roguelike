@@ -5,6 +5,7 @@ import {DATASTORE, clearDataStore} from './datastore.js';
 import {EntityFactory} from './entities.js';
 import {StartupInput, PlayInput, EndInput, HCInput, PersistenceInput} from './key_bind.js';
 import {TIME_ENGINE, SCHEDULER} from './timing.js';
+import ROT from 'rot-js';
 
 class UIMode {
   constructor(Game){
@@ -71,7 +72,7 @@ export class PlayMode extends UIMode {
     if (!this.playHandler){
       this.playHandler = new PlayInput(this.Game);
     }
-    //TIME_ENGINE.unlock();
+    TIME_ENGINE.unlock();
   }
 
   toJSON() {
@@ -106,39 +107,31 @@ export class PlayMode extends UIMode {
 
   setupNewLevel() {
     SCHEDULER.clear();
-    let x = DATASTORE.ENTITIES[this.getAvatar().getID()].state.x;
-    let y = DATASTORE.ENTITIES[this.getAvatar().getID()].state.y;
-    let avatarID = DATASTORE.ENTITIES[this.getAvatar().getID()];
-
+    let avatar = DATASTORE.ENTITIES[this.getAvatar().getID()]
+    let x = avatar.state.x;
+    let y = avatar.state.y;
     this.state.level = DATASTORE.LEVEL;
-
+    this.state.level += 1;
     clearDataStore();
     DATASTORE.GAME = this.Game;
-    Message.send('Level ' + this.state.level*1);
     let m = MapMaker({xdim: 40, ydim: 12});
     this.state.mapID = m.getID();
     m.build();
     this.state.cameraMapX = 0;
     this.state.cameraMapY = 0;
-    let a = EntityFactory.create('avatar');
-    this.state.avatarID = a.getID()
-    m.addEntityAt(a, x, y);
-    for (let i = 0; i < 3; i++) {
-      m.addEntityAtRandomPosition(EntityFactory.create('tree'));
-    }
-    for (let i = 0; i < 3; i++) {
-      m.addEntityAtRandomPosition(EntityFactory.create('soldier'));
-    }
+    m.addEntityAt(avatar, x, y);
+    this.levelHandler(this.state.level, m, EntityFactory)
     this.moveCameratoAvatar();
-    this.state.level += 1;
     DATASTORE.LEVEL = this.state.level;
+    Message.send('Level ' + this.state.level*1);
     this.render(this.Game.display.main.o);
   }
 
   render(display) {
     display.clear();
     DATASTORE.MAPS[this.state.mapID].render(display, this.state.cameraMapX, this.state.cameraMapY);
-    if (DATASTORE.MAPS[this.state.mapID].state.nextLevel == true){
+    console.log(DATASTORE.MAPS[this.state.mapID].state.nextLevel);
+    if (DATASTORE.MAPS[this.state.mapID].nextLevel()){
       this.setupNewLevel();
     }
   }
@@ -170,6 +163,9 @@ export class PlayMode extends UIMode {
       this.moveAvatar(1, 0);
       return true;
     }
+    if (eventOutput == 'r') {
+      this.retreat();
+    }
     return eventOutput;
   }
   moveCamera(dx, dy){
@@ -191,6 +187,67 @@ export class PlayMode extends UIMode {
   getAvatar() {
     return DATASTORE.ENTITIES[this.state.avatarID];
   }
+  levelHandler(level, map, EntityFactory) {
+    console.log('heli')
+    if (level <= 3) {
+      console.log('hello');
+      let num = ROT.RNG.getUniform() * 2 + 3;
+      for (let i = 0; i < 3; i++) {
+        map.addEntityAtRandomPosition(EntityFactory.create('tree'));
+      }
+      for (let i = 0; i < num; i++) {
+        map.addEntityAtRandomPosition(EntityFactory.create('soldier'));
+      }
+    } else if (3 < level <= 5) {
+      let num = ROT.RNG.getUniform() * 5 + 5;
+      for (let i = 0; i < 3; i++) {
+        map.addEntityAtRandomPosition(EntityFactory.create('tree'));
+      }
+      for (let i = 0; i < num; i++) {
+        map.addEntityAtRandomPosition(EntityFactory.create('soldier'));
+      }
+    } else if (5 < level <= 10) {
+        let num = ROT.RNG.getUniform() * 5 + 5;
+        for (let i = 0; i < 3; i++) {
+          map.addEntityAtRandomPosition(EntityFactory.create('tree'));
+        }
+        for (let i = 0; i < num; i++) {
+          map.addEntityAtRandomPosition(EntityFactory.create('soldier'));
+        }
+        for (let i = 0; i < num / 5; i++){
+          map.addEntityAtRandomPosition(EntityFactory.create('centaurion'));
+        }
+      } else if (10 < level <= 19) {
+        let num = ROT.RNG.getUniform() * 10 + 5;
+        for (let i = 0; i < 3; i++) {
+          map.addEntityAtRandomPosition(EntityFactory.create('tree'));
+        }
+        for (let i = 0; i < num; i++) {
+          map.addEntityAtRandomPosition(EntityFactory.create('soldier'));
+        }
+        for (let i = 0; i < num / 5; i++){
+          map.addEntityAtRandomPosition(EntityFactory.create('centaurion'));
+        }
+      } else {
+        let x = map.getXdim() / 2
+        let y = map.getYdim() / 2
+        map.tileGrid[x][y].name == 'floor';
+        map.tileGrid[x + 1][y].name == 'floor';
+        map.tileGrid[x - 1][y].name == 'floor';
+        map.tileGrid[x][y + 1].name == 'floor';
+        map.tileGrid[x][y - 1].name == 'floor';
+        map.addEntityAt(EntityFactory.create('king'), x, y);
+        map.addEntityAt(EntityFactory.create('royal guard'), x + 1, y);
+        map.addEntityAt(EntityFactory.create('royal guard'), x - 1, y);
+        map.addEntityAt(EntityFactory.create('royal guard'), x, y + 1);
+        map.addEntityAt(EntityFactory.create('royal guard'), x, y - 1);
+    }
+  }
+  retreat() {
+    this.state.level = this.state.level*1 - 2;
+    this.setupNewLevel;
+  }
+
   exit(){
     TIME_ENGINE.lock();
   }
@@ -333,6 +390,7 @@ export class PersistenceMode extends UIMode {
     for (let mapID in state.MAPS){
       let mapData = JSON.parse(state.MAPS[mapID]);
       DATASTORE.MAPS[mapID] = MapMaker(mapData); //mapData.xdim, mapData.ydim, mapData.setRngState);
+      this.Game.modes.play.state.mapID = mapID;
       DATASTORE.MAPS[mapID].build();
     }
     for (let entID in state.ENTITIES){
@@ -362,6 +420,9 @@ export class PersistenceMode extends UIMode {
         ent.getMap().state.mapPostoEntityID[pos] = entID;
         ent.getMap().state.entityIDtoMapPos[ent.getID()] = pos;
         SCHEDULER.add(ent);
+        if (ent.name == 'avatar') {
+          this.Game.modes.play.state.avatarID = ent.getID();
+        }
     }
     console.log('post-load datastore');
     console.dir(DATASTORE);

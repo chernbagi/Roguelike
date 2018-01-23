@@ -35,7 +35,7 @@ export class PlayInput extends keyBinder{
         this.Game.switchMode('persistence');
         return true;
       }
-      if (evt.key == "w" || evt.key == "s" || evt.key == "a" || evt.key == "d") {
+      if (evt.key == "w" || evt.key == "s" || evt.key == "a" || evt.key == "d" || evt.key == "r") {
         return evt.key;
       }
     }
