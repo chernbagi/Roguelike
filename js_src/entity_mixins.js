@@ -171,7 +171,9 @@ export let HitPoints = {
       if (this.getHp() <= 0) {
         SCHEDULER.remove(this);
         evtData.src.raiseMixinEvent('kills',{target: this});
-        //evtData.raiseMixinEvent('killedFoe', {target: this})
+        if (this.getXP){
+          evtData.src.raiseMixinEvent('killedFoe', {target: this})
+        }
         this.destroy();
       }
     }
@@ -345,7 +347,7 @@ export let ActorPlayer = {
 
 //******************************************
 
-let ExpPlayer = {
+export let ExpPlayer = {
   META:{
     mixinName: 'ExpPlayer',
     mixinGroupName: 'Exp',
@@ -368,14 +370,14 @@ let ExpPlayer = {
   LISTENERS: {
     'killedFoe': function(evtData) {
       this.addXP(evtData.target.getXP())
-      raiseMixinEvent('levelUp')
+      this.raiseMixinEvent('levelUp')
     }
   }
 };
 
 //******************************************
 
-let ExpEnemy = {
+export let ExpEnemy = {
   META:{
     mixinName: 'ExpEnemy',
     mixinGroupName: 'Exp',
@@ -395,7 +397,7 @@ let ExpEnemy = {
 };
 
 //******************************************
-let Levels = {
+export let Levels = {
   META:{
     mixinName: 'Levels',
     mixinGroupName: 'Level',
@@ -410,11 +412,22 @@ let Levels = {
     },
     setLevel: function(level) {
       this.state._Levels.level = level;
+    },
+    addLevel: function() {
+      this.state._Levels.level += 1;
+    },
+    checkLeveled: function() {
+      let requiredXp = 5*(this.getLevel()-1) + 5*this.getLevel();
+      if (this.getXp >= requiredXp){
+          this.addLevel();
+          this.checkLeveled();
+      }
     }
   },
   LISTENERS: {
-    'evtLabel': function(evtData) {
-
+    'levelUp': function(evtData) {
+      this.checkLeveled();
+      Message.send('Level Up')
     }
   }
 };

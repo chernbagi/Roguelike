@@ -146,6 +146,9 @@ export class PlayMode extends UIMode {
     display.drawText(0, 3, "Location: " + this.getAvatar().getX() + ", " + this.getAvatar().getY());
     display.drawText(0, 4, "Max HP: " + this.getAvatar().getMaxHp());
     display.drawText(0, 5, "Current HP: " + this.getAvatar().getHp());
+    display.drawText(0, 6, "XP: " + this.getAvatar().getXP());
+    display.drawText(0, 7, "Level: " + this.getAvatar().getLevel());
+
   }
 
   handleInput(eventType, evt){
@@ -436,6 +439,12 @@ export class PersistenceMode extends UIMode {
         }
         if (entState._MeleeAttacker) {
           ent.state._MeleeAttacker.meleeDamage = entState._MeleeAttacker.meleeDamage;
+        }
+        if (entState._ExpPlayer) {
+          ent.state._ExpPlayer.exp = entState._ExpPlayer.exp;
+        }
+        if (entState._Levels) {
+          ent.state._Levels.level = entState._Levels.level;
         }
         SCHEDULER.remove(state.ENTITIES[entID]);
         DATASTORE.MAPS[Object.keys(DATASTORE.MAPS)[0]].addEntityAt(ent, DATASTORE.ENTITIES[entID].x, DATASTORE.ENTITIES[entID].y);
