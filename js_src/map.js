@@ -64,7 +64,7 @@ class Map {
   }
   nextLevel() {
     for (let entID in DATASTORE.ENTITIES) {
-      if (DATASTORE.ENTITIES[entID].name == 'soldier' || DATASTORE.ENTITIES[entID].name == 'centaurion'){
+      if (DATASTORE.ENTITIES[entID].name == 'soldier' || DATASTORE.ENTITIES[entID].name == 'centaurion' ||DATASTORE.ENTITIES[entID].name == 'general' || DATASTORE.ENTITIES[entID].name == 'royal guard' || DATASTORE.ENTITIES[entID].name == 'king'){
         return false;
       }
     }
