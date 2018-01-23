@@ -47,7 +47,6 @@ class Map {
   extractEntity(ent){
     delete this.state.mapPostoEntityID[this.state.entityIDtoMapPos[ent.getID()]];
     delete this.state.entityIDtoMapPos[ent.getID()];
-    console.log('extrating')
     return ent;
   }
   addEntityAt(ent, xPos, yPos) {
@@ -64,14 +63,11 @@ class Map {
     this.addEntityAt(ent, p[0], p[1]);
   }
   nextLevel() {
-    console.dir(DATASTORE.ENTITIES);
     for (let entID in DATASTORE.ENTITIES) {
       if (DATASTORE.ENTITIES[entID].name == 'soldier' || DATASTORE.ENTITIES[entID].name == 'centaurion'){
-        console.log('false');
         return false;
       }
     }
-    console.log('true')
     return true;
   }
   getRandomOpenPosition() {
@@ -83,7 +79,6 @@ class Map {
       return this.getRandomOpenPosition();
   }
   isPositionOpen(x, y) {
-    console.log(this.tileGrid[x][y])
     if (this.tileGrid[x][y].isA('floor')) {
       return true;
     }
@@ -113,8 +108,6 @@ class Map {
       for(let yi=ystart;yi<yend;yi++){
         let pos = `${xi},${yi}`;
         if (this.state.mapPostoEntityID[pos]) {
-          console.dir(DATASTORE.ENTITIES)
-          console.log(this.state.mapPostoEntityID[pos]);
           DATASTORE.ENTITIES[this.state.mapPostoEntityID[pos]].render(display, cx, cy);
         }
         else{

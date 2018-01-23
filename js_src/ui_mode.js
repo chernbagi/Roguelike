@@ -107,12 +107,14 @@ export class PlayMode extends UIMode {
 
   setupNewLevel() {
     SCHEDULER.clear();
-    let avatar = DATASTORE.ENTITIES[this.getAvatar().getID()]
+    let avatar = DATASTORE.ENTITIES[this.getAvatar().getID()];
+    SCHEDULER.add(avatar);
     let x = avatar.state.x;
     let y = avatar.state.y;
     this.state.level = DATASTORE.LEVEL;
     this.state.level += 1;
     clearDataStore();
+    DATASTORE.ENTITIES[avatar.getID()] = avatar;
     DATASTORE.GAME = this.Game;
     let m = MapMaker({xdim: 40, ydim: 12});
     this.state.mapID = m.getID();
@@ -121,6 +123,7 @@ export class PlayMode extends UIMode {
     this.state.cameraMapY = 0;
     m.addEntityAt(avatar, x, y);
     this.levelHandler(this.state.level, m, EntityFactory)
+    console.log(DATASTORE.ENTITIES[this.state.avatarID]);
     this.moveCameratoAvatar();
     DATASTORE.LEVEL = this.state.level;
     Message.send('Level ' + this.state.level*1);
@@ -130,7 +133,6 @@ export class PlayMode extends UIMode {
   render(display) {
     display.clear();
     DATASTORE.MAPS[this.state.mapID].render(display, this.state.cameraMapX, this.state.cameraMapY);
-    console.log(DATASTORE.MAPS[this.state.mapID].state.nextLevel);
     if (DATASTORE.MAPS[this.state.mapID].nextLevel()){
       this.setupNewLevel();
     }
@@ -165,6 +167,11 @@ export class PlayMode extends UIMode {
     }
     if (eventOutput == 'r') {
       this.retreat();
+      return true;
+    }
+    if (eventOutput == 't') {
+      this.advance();
+      return true;
     }
     return eventOutput;
   }
@@ -188,9 +195,9 @@ export class PlayMode extends UIMode {
     return DATASTORE.ENTITIES[this.state.avatarID];
   }
   levelHandler(level, map, EntityFactory) {
-    console.log('heli')
-    if (level <= 3) {
-      console.log('hello');
+    console.log('level')
+    if (this.level <= 3) {
+      console.log(level)
       let num = ROT.RNG.getUniform() * 2 + 3;
       for (let i = 0; i < 3; i++) {
         map.addEntityAtRandomPosition(EntityFactory.create('tree'));
@@ -198,7 +205,8 @@ export class PlayMode extends UIMode {
       for (let i = 0; i < num; i++) {
         map.addEntityAtRandomPosition(EntityFactory.create('soldier'));
       }
-    } else if (3 < level <= 5) {
+    } else if (3 < this.level <= 5) {
+      console.log(level)
       let num = ROT.RNG.getUniform() * 5 + 5;
       for (let i = 0; i < 3; i++) {
         map.addEntityAtRandomPosition(EntityFactory.create('tree'));
@@ -206,46 +214,52 @@ export class PlayMode extends UIMode {
       for (let i = 0; i < num; i++) {
         map.addEntityAtRandomPosition(EntityFactory.create('soldier'));
       }
-    } else if (5 < level <= 10) {
-        let num = ROT.RNG.getUniform() * 5 + 5;
-        for (let i = 0; i < 3; i++) {
-          map.addEntityAtRandomPosition(EntityFactory.create('tree'));
-        }
-        for (let i = 0; i < num; i++) {
-          map.addEntityAtRandomPosition(EntityFactory.create('soldier'));
-        }
-        for (let i = 0; i < num / 5; i++){
-          map.addEntityAtRandomPosition(EntityFactory.create('centaurion'));
-        }
-      } else if (10 < level <= 19) {
-        let num = ROT.RNG.getUniform() * 10 + 5;
-        for (let i = 0; i < 3; i++) {
-          map.addEntityAtRandomPosition(EntityFactory.create('tree'));
-        }
-        for (let i = 0; i < num; i++) {
-          map.addEntityAtRandomPosition(EntityFactory.create('soldier'));
-        }
-        for (let i = 0; i < num / 5; i++){
-          map.addEntityAtRandomPosition(EntityFactory.create('centaurion'));
-        }
-      } else {
-        let x = map.getXdim() / 2
-        let y = map.getYdim() / 2
-        map.tileGrid[x][y].name == 'floor';
-        map.tileGrid[x + 1][y].name == 'floor';
-        map.tileGrid[x - 1][y].name == 'floor';
-        map.tileGrid[x][y + 1].name == 'floor';
-        map.tileGrid[x][y - 1].name == 'floor';
-        map.addEntityAt(EntityFactory.create('king'), x, y);
-        map.addEntityAt(EntityFactory.create('royal guard'), x + 1, y);
-        map.addEntityAt(EntityFactory.create('royal guard'), x - 1, y);
-        map.addEntityAt(EntityFactory.create('royal guard'), x, y + 1);
-        map.addEntityAt(EntityFactory.create('royal guard'), x, y - 1);
+    } else if (5 < this.level <= 10) {
+      let num = ROT.RNG.getUniform() * 5 + 5;
+      for (let i = 0; i < 3; i++) {
+        map.addEntityAtRandomPosition(EntityFactory.create('tree'));
+      }
+      for (let i = 0; i < num; i++) {
+        map.addEntityAtRandomPosition(EntityFactory.create('soldier'));
+      }
+      for (let i = 0; i < num / 5; i++){
+        map.addEntityAtRandomPosition(EntityFactory.create('centaurion'));
+      }
+    } else if (10 < this.level <= 19) {
+      let num = ROT.RNG.getUniform() * 10 + 5;
+      for (let i = 0; i < 3; i++) {
+        map.addEntityAtRandomPosition(EntityFactory.create('tree'));
+      }
+      for (let i = 0; i < num; i++) {
+        map.addEntityAtRandomPosition(EntityFactory.create('soldier'));
+      }
+      for (let i = 0; i < num / 5; i++){
+        map.addEntityAtRandomPosition(EntityFactory.create('centaurion'));
+      }
+    } else if (this.level == 20) {
+      let x = map.getXdim() / 2
+      let y = map.getYdim() / 2
+      map.tileGrid[x][y].name == 'floor';
+      map.tileGrid[x + 1][y].name == 'floor';
+      map.tileGrid[x - 1][y].name == 'floor';
+      map.tileGrid[x][y + 1].name == 'floor';
+      map.tileGrid[x][y - 1].name == 'floor';
+      map.addEntityAt(EntityFactory.create('king'), x, y);
+      map.addEntityAt(EntityFactory.create('royal guard'), x + 1, y);
+      map.addEntityAt(EntityFactory.create('royal guard'), x - 1, y);
+      map.addEntityAt(EntityFactory.create('royal guard'), x, y + 1);
+      map.addEntityAt(EntityFactory.create('royal guard'), x, y - 1);
+    } else if (level > 20){
+      this.Game.switchMode('win')
     }
   }
   retreat() {
     this.state.level = this.state.level*1 - 2;
-    this.setupNewLevel;
+    DATASTORE.LEVEL = this.state.level;
+    this.setupNewLevel();
+  }
+  advance() {
+    this.setupNewLevel();
   }
 
   exit(){
@@ -316,7 +330,7 @@ export class HelpMode extends UIMode {
   render(display) {
     display.clear();
     display.drawText(35, 1, "Help Mode:");
-    display.drawText(1, 2, "Playmode Controls: wasd to move, k to win, l to lose,");
+    display.drawText(1, 2, "Playmode Controls: wasd to move, k to win, l to lose, r to retreat a level");
     display.drawText(1, 3, "c to enter cache mode, and esc to enter persistence mode");
     display.drawText(1, 4, "persistence mode: n for new game, s to save, l to load, escape to exit");
     display.drawText(1, 5, "cache mode: escape to exit");

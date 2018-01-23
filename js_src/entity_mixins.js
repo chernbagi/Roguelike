@@ -167,12 +167,11 @@ export let HitPoints = {
     'damaged': function(evtData) {
       this.loseHp(evtData.damageAmount);
       evtData.src.raiseMixinEvent('damages',{target: this, damageAmount: evtData.damageAmount});
-      console.log('ploop');
-      console.log(this.getHp());
+      //console.log(this.getHp());
       if (this.getHp() <= 0) {
-        console.log('ploop');
         SCHEDULER.remove(this);
         evtData.src.raiseMixinEvent('kills',{target: this});
+        //evtData.raiseMixinEvent('killedFoe', {target: this})
         this.destroy();
       }
     }
@@ -235,10 +234,9 @@ export let ActorWanderer = {
     setSpentActions: function(amt){
       this.state._ActorWanderer.spentActions = amt;
     },
-    findNearbyAvatar(){
+    findNearbyAvatar: function(){
       for (let i = -1; i <= 1; i++){
         for (let j = -1; j <= 1; j++){
-          console.dir(this);
           let tileInfo = this.getMap().getTargetPositionInfo(this.state.x*1 + i, this.state.y*1 + j);
           if (tileInfo.entity && tileInfo.entity.state.name == "avatar") {
             console.log('avatar found');
@@ -248,7 +246,7 @@ export let ActorWanderer = {
       }
       return [false];
     },
-    findNearbyAlly(){
+    findNearbyAlly: function(){
       for (let i = -1; i <= 1; i++){
         for (let j = -1; j <= 1; j++){
           let tileInfo = this.getMap().getTargetPositionInfo(this.state.x*1 + i, this.state.y*1 + j);
@@ -268,18 +266,13 @@ export let ActorWanderer = {
         this.tryWalk(-ally[1], -ally[2]);
       } else {
         let num = ROT.RNG.getUniform();
-        console.log(num);
         if (num < 0.25) {
-          console.log(1);
           this.tryWalk(1, 0);
         } else if (0.25 <= num < 0.5) {
-          console.log(2);
           this.tryWalk(-1, 0);
         } else if (0.5 <= num < 0.75){
-          console.log(3);
           this.tryWalk(0, 1);
         } else {
-          console.log(4);
           this.tryWalk(0, -1);
         }
       }
@@ -293,9 +286,8 @@ export let ActorWanderer = {
   LISTENERS: {
     'spendAction': function(evtData) {
       evtData.spender.state._ActorWanderer.spentActions += evtData.spent;
-      console.log(evtData.spender.state._ActorWanderer.spentActions);
+      //console.log(evtData.spender.state._ActorWanderer.spentActions);
       if (evtData.spender.state._ActorWanderer.spentActions >= evtData.spender.getAllowedActionDuration()){
-        console.log('abc')
         SCHEDULER.next();
       }
     }
@@ -336,7 +328,6 @@ export let ActorPlayer = {
       Message.send('your turn');
       return false;
     }
-
   },
   LISTENERS: {
     'spendAction': function(evtData) {
@@ -353,3 +344,106 @@ export let ActorPlayer = {
 };
 
 //******************************************
+
+let ExpPlayer = {
+  META:{
+    mixinName: 'ExpPlayer',
+    mixinGroupName: 'Exp',
+    stateNameSpace: '_ExpPlayer',
+    stateModel: {
+      exp: 0,
+    },
+  },
+  METHODS: {
+    getXP: function() {
+      return this.state._ExpPlayer.exp;
+    },
+    setXP: function(xp) {
+      this.state._ExpPlayer.exp = xp;
+    },
+    addXP: function(xp) {
+      this.state._ExpPlayer.exp += xp;
+    }
+  },
+  LISTENERS: {
+    'killedFoe': function(evtData) {
+      this.addXP(evtData.target.getXP())
+      raiseMixinEvent('levelUp')
+    }
+  }
+};
+
+//******************************************
+
+let ExpEnemy = {
+  META:{
+    mixinName: 'ExpEnemy',
+    mixinGroupName: 'Exp',
+    stateNameSpace: '_ExpEnemy',
+    stateModel: {
+      exp: 10,
+    },
+  },
+  METHODS: {
+    getXP: function() {
+      return this.state._ExpEnemy.exp;
+    },
+    setXP(xp) {
+      this.state._ExpEnemy.exp = xp;
+    }
+  },
+};
+
+//******************************************
+let Levels = {
+  META:{
+    mixinName: 'Levels',
+    mixinGroupName: 'Level',
+    stateNameSpace: '_Levels',
+    stateModel: {
+      level: 1
+    },
+  },
+  METHODS: {
+    getLevel: function(){
+      return this.state._Levels.level;
+    },
+    setLevel: function(level) {
+      this.state._Levels.level = level;
+    }
+  },
+  LISTENERS: {
+    'evtLabel': function(evtData) {
+
+    }
+  }
+};
+
+//******************************************
+
+// let exampleMixin = {
+//   META:{
+//     mixinName: 'ExampleMixin',
+//     mixinGroupName: 'ExampleMixinGroup',
+//     stateNameSpace: '_ExampleMixin',
+//     stateModel: {
+//       foo: 10
+//     },
+//     initialize: function(){
+//       //do any initialization
+//     }
+//   },
+//   METHODS: {
+//     method1: function(p){
+//       //do stuff
+//       //can access / manipulate this.state.ExampleMixin
+//     }
+//   },
+//   LISTENERS: {
+//     'evtLabel': function(evtData) {
+//
+//     }
+//   }
+// };
+//
+// //******************************************
