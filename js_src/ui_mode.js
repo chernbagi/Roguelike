@@ -102,7 +102,6 @@ export class PlayMode extends UIMode {
   setupNewLevel() {
     SCHEDULER.clear();
     let avatar = DATASTORE.ENTITIES[this.getAvatar().getID()];
-    SCHEDULER.add(avatar);
     let x = avatar.state.x;
     let y = avatar.state.y;
     this.state.level = DATASTORE.LEVEL;
@@ -116,7 +115,8 @@ export class PlayMode extends UIMode {
     this.state.cameraMapX = 0;
     this.state.cameraMapY = 0;
     m.addEntityAt(avatar, x, y);
-    this.levelHandler(m, EntityFactory)
+    SCHEDULER.add(avatar, true);
+    this.levelHandler(m, EntityFactory);
     console.log(DATASTORE.ENTITIES[this.state.avatarID]);
     this.moveCameratoAvatar();
     DATASTORE.LEVEL = this.state.level;
@@ -139,15 +139,16 @@ export class PlayMode extends UIMode {
     display.drawText(0, 3, "Location: " + this.getAvatar().getX() + ", " + this.getAvatar().getY());
     display.drawText(0, 4, "Max HP: " + this.getAvatar().getMaxHp());
     display.drawText(0, 5, "Current HP: " + this.getAvatar().getHp());
-    display.drawText(0, 6, "XP: " + this.getAvatar().getXP());
+    display.drawText(0, 6, "Melee Damage: " + this.getAvatar().getMeleeDamage());
     display.drawText(0, 7, "Level: " + this.getAvatar().getLevel());
-    display.drawText(0, 8, "Strength: " + this.getAvatar().getStr());
-    display.drawText(0, 9, "Intelligence: " + this.getAvatar().getInt());
-    display.drawText(0, 10, "Vitality: " + this.getAvatar().getVit());
-    display.drawText(0, 11, "Agility: " + this.getAvatar().getAgi());
-    display.drawText(0, 12, "Soldiers Killed: ");// + this.getAvatar().getAgi());
-    display.drawText(0, 13, "Centaurions Killed: ");// + this.getAvatar().getAgi());
-    display.drawText(0, 14, "Generals Killed: ");// + this.getAvatar().getAgi());
+    display.drawText(0, 8, "Stat Points: " + this.getAvatar().getSP());
+    display.drawText(0, 9, "Strength: " + this.getAvatar().getStr());
+    display.drawText(0, 10, "Intelligence: " + this.getAvatar().getInt());
+    display.drawText(0, 11, "Vitality: " + this.getAvatar().getVit());
+    display.drawText(0, 12, "Agility: " + this.getAvatar().getAgi());
+    display.drawText(0, 13, "Soldiers Killed: ");// + this.getAvatar().getAgi());
+    display.drawText(0, 14, "Centaurions Killed: ");// + this.getAvatar().getAgi());
+    display.drawText(0, 15, "Generals Killed: ");// + this.getAvatar().getAgi());
   }
 
   handleInput(eventType, evt){
@@ -469,44 +470,66 @@ export class PersistenceMode extends UIMode {
   }
 }
 
-export class LevelMode {
+export class LevelMode extends UIMode {
   enter(){
     if (!this.levelHandler){
       this.levelHandler = new LevelInput(this.Game);
     }
     TIME_ENGINE.unlock();
+    if (this.getAvatar().getSP() == 0){
+      Message.send('you have no stat points!')
+      this.Game.switchMode('play');
+    }
+  }
+  getAvatar() {
+    return DATASTORE.ENTITIES[this.Game.modes.play.state.avatarID];
   }
   handleInput(eventType, evt){
     let eventOutput = this.levelHandler.handleInput(eventType, evt);
-    if (eventOutput != true) {
-      this.getAvatar().addSP(-1);
-    }
     if (eventOutput == '1') {
       this.getAvatar().addStr(1);
+      this.getAvatar().addSP(-1);
+      Message.send('1 Strength Point Added');
       return true;
     }
     if (eventOutput == '2') {
       this.getAvatar().addInt(1);
+      this.getAvatar().addSP(-1);
+      Message.send('1 Intelligence Point Added');
       return true;
     }
     if (eventOutput == '3') {
       this.getAvatar().addVit(1);
+      this.getAvatar().addSP(-1);
+      Message.send('1 Vitality Point Added');
       return true;
     }
     if (eventOutput == '4') {
       this.getAvatar().addAgi(1);
+      this.getAvatar().addSP(-1);
+      Message.send('1 Agility Point Added');
       return true;
     }
-    if (this.getAvatar().getSP() == 0) {
-      this.Game.switchMode('play');
-    }
+    this.getAvatar().setMaxHp((this.getAvatar().getVit() + (this.getAvatar().getLevel() - 1)));
+    this.getAvatar().setHp(this.getAvatar().getMaxHp());
+    this.getAvatar().setMeleeDamage(3 + (this.getAvatar().getStr()-10) * 2)
   }
    render(display){
      display.clear();
      display.drawText(1, 1, "Hit esc to exit");
+     display.drawText(28, 2, "Stat Points Remaining: " + this.getAvatar().getSP());
      display.drawText(25, 3, "Press 1 to Raise Your Strength");
      display.drawText(23, 4, "Press 2 to Raise Your Intelligence");
      display.drawText(25, 5, "Press 3 to Raise Your Vitality");
      display.drawText(25, 6, "Press 4 to Raise Your Agility");
+  }
+  renderAvatar(display){
+    display.clear();
+    display.drawText(0, 0, "Stat Mode");
+    display.drawText(0, 2, "Level: " + this.getAvatar().getLevel());
+    display.drawText(0, 3, "Strength: " + this.getAvatar().getStr());
+    display.drawText(0, 4, "Intelligence: " + this.getAvatar().getInt());
+    display.drawText(0, 5, "Vitality: " + this.getAvatar().getVit());
+    display.drawText(0, 6, "Agility: " + this.getAvatar().getAgi());
   }
 }

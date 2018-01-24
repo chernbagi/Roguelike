@@ -81,12 +81,14 @@ export class PersistenceInput extends keyBinder {
 }
 export class LevelInput extends keyBinder{
   handleInput(eventType, evt){
-    if (evt.key == "Escape") {
-      this.Game.switchMode('play');
-      return true;
-    }
-    if (evt.key == "1" || evt.key == "2" || evt.key == "3" || evt.key == "4") {
-      return evt.key;
+    if (eventType == 'keyup') {
+      if(evt.key == "Escape") {
+        this.Game.switchMode('play');
+        return true;
+      }
+      if (evt.key == "1" || evt.key == "2" || evt.key == "3" || evt.key == "4") {
+        return evt.key;
+      }
     }
   }
 }

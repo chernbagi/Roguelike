@@ -93,7 +93,6 @@ export let WalkerCorporeal = {
   },
   METHODS:{
     tryWalk: function(dx, dy){
-      console.dir(SCHEDULER);
       let newX = this.state.x*1 + dx*1;
       let newY = this.state.y*1 + dy*1;
 
@@ -151,7 +150,6 @@ export let HitPoints = {
       this.state._HitPoints.curHp - Math.min(this.state._HitPoints.maxHp, this.state._HitPoints.curHp);
     },
     loseHp: function (amt){
-      console.log('blorp');
       this.state._HitPoints.curHp -= amt;
       this.state._HitPoints.curHp = Math.min(this.state._HitPoints.maxHp, this.state._HitPoints.curHp);
     },
@@ -312,7 +310,6 @@ export let ActorWanderer = {
       }
     },
     act: function() {
-      console.log('enemy turn');
       TIME_ENGINE.lock();
       Message.send('enemy turn');
       this.randomMove();
@@ -453,10 +450,11 @@ export let Levels = {
       this.state._Levels.level += 1;
     },
     checkLeveled: function() {
-      let requiredXp = 5*(this.getLevel()-1) + 5*this.getLevel();
+      let requiredXp = 7*(this.getLevel()-1) + 7*this.getLevel();
       if (this.getXP() >= requiredXp){
         this.addLevel();
-        this.setHp(this.getMaxHp());
+        Message.send('Level Up');
+        this.raiseMixinEvent('levelStats');
         this.checkLeveled();
       }
     }
@@ -464,8 +462,6 @@ export let Levels = {
   LISTENERS: {
     'levelUp': function(evtData) {
       this.checkLeveled();
-      this.setMaxHp((this.getVit() + (this.getLevel() - 1)));
-      Message.send('Level Up')
     }
   }
 };
@@ -482,13 +478,13 @@ export let PlayerStats = {
       intelligence: 10,
       vitality: 10,
       agility: 10,
-      statPoints:0
+      statPoints: 40
     },
     initialize: function(template) {
-      this.state._PlayerStats.strength = template.strength || 10;
-      this.state._PlayerStats.intelligence = template.intelligence || 10;
-      this.state._PlayerStats.vitality = template.vitality || 10;
-      this.state._PlayerStats.agility = template.agility || 10;
+      this.state._PlayerStats.strength = template.strength || 0;
+      this.state._PlayerStats.intelligence = template.intelligence || 0;
+      this.state._PlayerStats.vitality = template.vitality || 0;
+      this.state._PlayerStats.agility = template.agility || 0;
     }
   },
   METHODS: {
