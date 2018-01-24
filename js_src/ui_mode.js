@@ -3,7 +3,7 @@ import {MapMaker} from './map.js';
 import {DisplaySymbol} from'./display_symbol.js';
 import {DATASTORE, clearDataStore} from './datastore.js';
 import {EntityFactory} from './entities.js';
-import {StartupInput, PlayInput, EndInput, HCInput, PersistenceInput} from './key_bind.js';
+import {StartupInput, PlayInput, EndInput, HCInput, PersistenceInput, LevelInput} from './key_bind.js';
 import {TIME_ENGINE, SCHEDULER} from './timing.js';
 import ROT from 'rot-js';
 
@@ -21,7 +21,6 @@ class UIMode {
   handleInput(eventType, evt){
     console.log("handling " + this.constructor.name);
     console.log(`event type is ${eventType}`)
-    console.dir(evt)
     return(true)
   }
    render(display){
@@ -49,7 +48,7 @@ export class StartupMode extends UIMode {
     display.drawText(30, 6, "Hit any key to begin");
     display.drawText(35, 3, "Welcome to");
     display.drawText(37, 4, "HERO'S");
-    display.drawText(36, 5, "GAMBIT");
+    display.drawText(37, 5, "GAMBIT");
   }
   handleInput(eventType, evt){
     return this.startupHandler.handleInput(eventType, evt);
@@ -92,12 +91,7 @@ export class PlayMode extends UIMode {
     let a = EntityFactory.create('avatar');
     this.state.avatarID = a.getID();
     m.addEntityAtRandomPosition(a);
-    for (let i = 0; i < 3; i++) {
-      m.addEntityAtRandomPosition(EntityFactory.create('tree'));
-    }
-    for (let i = 0; i < 3; i++) {
-      m.addEntityAtRandomPosition(EntityFactory.create('soldier'));
-    }
+    this.levelHandler(m, EntityFactory);
     console.log('play mode - new game started');
     this.moveCameratoAvatar();
     Message.clearCache();
@@ -134,7 +128,6 @@ export class PlayMode extends UIMode {
     display.clear();
     DATASTORE.MAPS[this.state.mapID].render(display, this.state.cameraMapX, this.state.cameraMapY);
     if (DATASTORE.MAPS[this.state.mapID].nextLevel()){
-      console.log('HALLO')
       this.setupNewLevel();
     }
   }
@@ -148,7 +141,13 @@ export class PlayMode extends UIMode {
     display.drawText(0, 5, "Current HP: " + this.getAvatar().getHp());
     display.drawText(0, 6, "XP: " + this.getAvatar().getXP());
     display.drawText(0, 7, "Level: " + this.getAvatar().getLevel());
-
+    display.drawText(0, 8, "Strength: " + this.getAvatar().getStr());
+    display.drawText(0, 9, "Intelligence: " + this.getAvatar().getInt());
+    display.drawText(0, 10, "Vitality: " + this.getAvatar().getVit());
+    display.drawText(0, 11, "Agility: " + this.getAvatar().getAgi());
+    display.drawText(0, 12, "Soldiers Killed: ");// + this.getAvatar().getAgi());
+    display.drawText(0, 13, "Centaurions Killed: ");// + this.getAvatar().getAgi());
+    display.drawText(0, 14, "Generals Killed: ");// + this.getAvatar().getAgi());
   }
 
   handleInput(eventType, evt){
@@ -198,55 +197,38 @@ export class PlayMode extends UIMode {
   getAvatar() {
     return DATASTORE.ENTITIES[this.state.avatarID];
   }
-  // makeEntites(num){
-  //
-  // }
-  levelHandler(map, EntityFactory) {
-    console.log('levelHandler level ' + this.state.level);
-    if (this.state.level <= 3) {
-      let num = ROT.RNG.getUniform() * 2 + 3;
-      console.log('1 ' + num);
-      for (let i = 0; i < 3; i++) {
-        map.addEntityAtRandomPosition(EntityFactory.create('tree'));
-      }
-      for (let i = 0; i < num; i++) {
-        map.addEntityAtRandomPosition(EntityFactory.create('soldier'));
-      }
-    } else if (3 < this.state.level && this.state.level <= 5) {
-      let num = ROT.RNG.getUniform() * 5 + 5;
-      console.log('2 ' + num);
-      for (let i = 0; i < 3; i++) {
-        map.addEntityAtRandomPosition(EntityFactory.create('tree'));
-      }
-      for (let i = 0; i < num; i++) {
-        map.addEntityAtRandomPosition(EntityFactory.create('soldier'));
-      }
-    } else if (5 < this.state.level && this.state.level <= 10) {
-      let num = ROT.RNG.getUniform() * 5 + 5;
-      console.log('3 ' + num);
-      for (let i = 0; i < 3; i++) {
-        map.addEntityAtRandomPosition(EntityFactory.create('tree'));
-      }
-      for (let i = 0; i < num; i++) {
-        map.addEntityAtRandomPosition(EntityFactory.create('soldier'));
-      }
+  makeEntites(num, map, EntityFactory){
+    for (let i = 0; i < 3; i++) {
+      map.addEntityAtRandomPosition(EntityFactory.create('tree'));
+    }
+    for (let i = 0; i < num; i++) {
+      map.addEntityAtRandomPosition(EntityFactory.create('soldier'));
+    }
+    if (this.state.level >= 5) {
       for (let i = 0; i < num / 5; i++){
         map.addEntityAtRandomPosition(EntityFactory.create('centaurion'));
       }
-    } else if (10 < this.state.level && this.state.level <= 19) {
-      let num = ROT.RNG.getUniform() * 10 + 5;
-      for (let i = 0; i < 3; i++) {
-        map.addEntityAtRandomPosition(EntityFactory.create('tree'));
-      }
-      for (let i = 0; i < num; i++) {
-        map.addEntityAtRandomPosition(EntityFactory.create('soldier'));
-      }
-      for (let i = 0; i < num / 5; i++){
-        map.addEntityAtRandomPosition(EntityFactory.create('centaurion'));
-      }
+    }
+    if (this.state.level >= 15) {
       for (let i = 0; i < num / 10; i++){
         map.addEntityAtRandomPosition(EntityFactory.create('general'));
       }
+    }
+  }
+  levelHandler(map, EntityFactory) {
+    if (this.state.level <= 3) {
+      let num = ROT.RNG.getUniform() * 2 + 3;
+      this.makeEntites(num, map, EntityFactory);
+    } else if (3 < this.state.level && this.state.level <= 5) {
+      let num = ROT.RNG.getUniform() * 5 + 5;
+      this.makeEntites(num, map, EntityFactory);
+    } else if (5 < this.state.level && this.state.level <= 10) {
+      let num = ROT.RNG.getUniform() * 5 + 5;
+      console.log('3 ' + num);
+      this.makeEntites(num, map, EntityFactory);
+    } else if (10 < this.state.level && this.state.level <= 19) {
+      let num = ROT.RNG.getUniform() * 10 + 5;
+      this.makeEntites(num, map, EntityFactory);
     } else if (this.state.level == 20) {
       let x = map.getXdim() / 2
       let y = map.getYdim() / 2
@@ -430,6 +412,12 @@ export class PersistenceMode extends UIMode {
         let ent = EntityFactory.create(DATASTORE.ENTITIES[entID].name);
 
         let entState = JSON.parse(state.ENTITIES[entID])
+        if (entState._PlayerStats) {
+          ent.state._PlayerStats.strength = entState._PlayerStats.strength;
+          ent.state._PlayerStats.intelligence = entState._PlayerStats.intelligence;
+          ent.state._PlayerStats.vitality = entState._PlayerStats.vitality;
+          ent.state._PlayerStats.agility = entState._PlayerStats.agility;
+        }
         if (entState._HitPoints) {
           ent.state._HitPoints.maxHp = entState._HitPoints.maxHp;
           ent.state._HitPoints.curHp = entState._HitPoints.curHp;
@@ -478,5 +466,47 @@ export class PersistenceMode extends UIMode {
       Message.send('Sorry, no local data storage is available for this browser so game save/load is not possible');
       return false;
     }
+  }
+}
+
+export class LevelMode {
+  enter(){
+    if (!this.levelHandler){
+      this.levelHandler = new LevelInput(this.Game);
+    }
+    TIME_ENGINE.unlock();
+  }
+  handleInput(eventType, evt){
+    let eventOutput = this.levelHandler.handleInput(eventType, evt);
+    if (eventOutput != true) {
+      this.getAvatar().addSP(-1);
+    }
+    if (eventOutput == '1') {
+      this.getAvatar().addStr(1);
+      return true;
+    }
+    if (eventOutput == '2') {
+      this.getAvatar().addInt(1);
+      return true;
+    }
+    if (eventOutput == '3') {
+      this.getAvatar().addVit(1);
+      return true;
+    }
+    if (eventOutput == '4') {
+      this.getAvatar().addAgi(1);
+      return true;
+    }
+    if (this.getAvatar().getSP() == 0) {
+      this.Game.switchMode('play');
+    }
+  }
+   render(display){
+     display.clear();
+     display.drawText(1, 1, "Hit esc to exit");
+     display.drawText(25, 3, "Press 1 to Raise Your Strength");
+     display.drawText(23, 4, "Press 2 to Raise Your Intelligence");
+     display.drawText(25, 5, "Press 3 to Raise Your Vitality");
+     display.drawText(25, 6, "Press 4 to Raise Your Agility");
   }
 }

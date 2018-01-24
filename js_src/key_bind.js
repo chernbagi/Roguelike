@@ -24,7 +24,7 @@ export class PlayInput extends keyBinder{
         return true;
       }
       if (evt.key == "l") {
-        this.Game.switchMode('lose');
+        this.Game.switchMode('level');
         return true;
       }
       if (evt.key == "c") {
@@ -76,6 +76,17 @@ export class PersistenceInput extends keyBinder {
         return(true);
       }
       return false;
+    }
+  }
+}
+export class LevelInput extends keyBinder{
+  handleInput(eventType, evt){
+    if (evt.key == "Escape") {
+      this.Game.switchMode('play');
+      return true;
+    }
+    if (evt.key == "1" || evt.key == "2" || evt.key == "3" || evt.key == "4") {
+      return evt.key;
     }
   }
 }

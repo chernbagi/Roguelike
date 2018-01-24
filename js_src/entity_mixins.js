@@ -93,6 +93,7 @@ export let WalkerCorporeal = {
   },
   METHODS:{
     tryWalk: function(dx, dy){
+      console.dir(SCHEDULER);
       let newX = this.state.x*1 + dx*1;
       let newY = this.state.y*1 + dy*1;
 
@@ -136,8 +137,12 @@ export let HitPoints = {
       curHp: 1
     },
     initialize: function(template){
-      this.state._HitPoints.maxHp = template.maxHp;
-      this.state._HitPoints.curHp = template.maxHp;
+      if(this.getVit){
+        this.state._HitPoints.maxHp = (this.getVit() + (this.getLevel() - 1))
+      } else{
+        this.state._HitPoints.maxHp = template.maxHp;
+      }
+      this.state._HitPoints.curHp = this.state._HitPoints.maxHp;
     }
   },
   METHODS: {
@@ -146,6 +151,7 @@ export let HitPoints = {
       this.state._HitPoints.curHp - Math.min(this.state._HitPoints.maxHp, this.state._HitPoints.curHp);
     },
     loseHp: function (amt){
+      console.log('blorp');
       this.state._HitPoints.curHp -= amt;
       this.state._HitPoints.curHp = Math.min(this.state._HitPoints.maxHp, this.state._HitPoints.curHp);
     },
@@ -165,9 +171,18 @@ export let HitPoints = {
   },
   LISTENERS: {
     'damaged': function(evtData) {
+      if(this.getAgi && this.getAgi() > 10) {
+        dodge = Math.pow(0.97, (this.getAgi()-10));
+        num = ROT.RNG.getUniform();
+        if (num > dodge){
+          console.log('dodged');
+          Message.send('dodged attack')
+          return true;
+        }
+      }
       this.loseHp(evtData.damageAmount);
       evtData.src.raiseMixinEvent('damages',{target: this, damageAmount: evtData.damageAmount});
-      //console.log(this.getHp());
+
       if (this.getHp() <= 0) {
         SCHEDULER.remove(this);
         evtData.src.raiseMixinEvent('kills',{target: this});
@@ -191,7 +206,11 @@ export let MeleeAttacker = {
       meleeDamage: 1
     },
     initialize: function(template){
-      this.state._MeleeAttacker.meleeDamage = template.meleeDamage || 1;
+      if (this.getStr){
+        this.state._MeleeAttacker.meleeDamage = (3 + (this.getStr()-10) * 2);
+      } else {
+        this.state._MeleeAttacker.meleeDamage = template.meleeDamage;
+      }
     }
   },
   METHODS: {
@@ -201,6 +220,18 @@ export let MeleeAttacker = {
   LISTENERS: {
     'bumpEntity': function(evtData) {
       console.log('bumped');
+      if (evtData.target.name == 'tree'){
+        if (this.getStr()){
+          if (this.getStr() >= 14) {
+            evtData.target.raiseMixinEvent('damaged', {src:this, damageAmount:this.getMeleeDamage()});
+            this.raiseMixinEvent('attacks', {actor:this, target:evtData.target})
+            this.gainHp(3);
+          } else {
+            this.raiseMixinEvent('wallBlocked', {reason: 'you aren\'t strong enough'});
+            return false;
+          }
+        }
+      }
       evtData.target.raiseMixinEvent('damaged', {src:this, damageAmount:this.getMeleeDamage()});
       this.raiseMixinEvent('attacks', {actor:this, target:evtData.target})
     }
@@ -221,6 +252,7 @@ export let ActorWanderer = {
     },
     initialize: function(){
       SCHEDULER.add(this, true);
+      console.log('entity added');
     }
   },
   METHODS: {
@@ -281,6 +313,7 @@ export let ActorWanderer = {
     },
     act: function() {
       console.log('enemy turn');
+      TIME_ENGINE.lock();
       Message.send('enemy turn');
       this.randomMove();
     }
@@ -290,6 +323,7 @@ export let ActorWanderer = {
       evtData.spender.state._ActorWanderer.spentActions += evtData.spent;
       //console.log(evtData.spender.state._ActorWanderer.spentActions);
       if (evtData.spender.state._ActorWanderer.spentActions >= evtData.spender.getAllowedActionDuration()){
+        TIME_ENGINE.unlock();
         SCHEDULER.next();
       }
     }
@@ -310,6 +344,7 @@ export let ActorPlayer = {
     },
     initialize: function(){
       SCHEDULER.add(this, true);
+      console.log('avatar added');
     }
   },
   METHODS: {
@@ -338,8 +373,6 @@ export let ActorPlayer = {
         evtData.spender.state._ActorPlayer.spentActions = 0;
         TIME_ENGINE.unlock();
         SCHEDULER.next();
-        console.log(SCHEDULER);
-
       }
     }
   }
@@ -383,8 +416,11 @@ export let ExpEnemy = {
     mixinGroupName: 'Exp',
     stateNameSpace: '_ExpEnemy',
     stateModel: {
-      exp: 10,
+      exp: 1,
     },
+    initialize: function(template) {
+      this.state._ExpEnemy.exp = template.exp || 1;
+    }
   },
   METHODS: {
     getXP: function() {
@@ -418,15 +454,17 @@ export let Levels = {
     },
     checkLeveled: function() {
       let requiredXp = 5*(this.getLevel()-1) + 5*this.getLevel();
-      if (this.getXp >= requiredXp){
-          this.addLevel();
-          this.checkLeveled();
+      if (this.getXP() >= requiredXp){
+        this.addLevel();
+        this.setHp(this.getMaxHp());
+        this.checkLeveled();
       }
     }
   },
   LISTENERS: {
     'levelUp': function(evtData) {
       this.checkLeveled();
+      this.setMaxHp((this.getVit() + (this.getLevel() - 1)));
       Message.send('Level Up')
     }
   }
@@ -434,29 +472,77 @@ export let Levels = {
 
 //******************************************
 
-// let exampleMixin = {
-//   META:{
-//     mixinName: 'ExampleMixin',
-//     mixinGroupName: 'ExampleMixinGroup',
-//     stateNameSpace: '_ExampleMixin',
-//     stateModel: {
-//       foo: 10
-//     },
-//     initialize: function(){
-//       //do any initialization
-//     }
-//   },
-//   METHODS: {
-//     method1: function(p){
-//       //do stuff
-//       //can access / manipulate this.state.ExampleMixin
-//     }
-//   },
-//   LISTENERS: {
-//     'evtLabel': function(evtData) {
-//
-//     }
-//   }
-// };
-//
-// //******************************************
+export let PlayerStats = {
+  META:{
+    mixinName: 'PlayerStats',
+    mixinGroupName: 'Stats',
+    stateNameSpace: '_PlayerStats',
+    stateModel: {
+      strength: 10,
+      intelligence: 10,
+      vitality: 10,
+      agility: 10,
+      statPoints:0
+    },
+    initialize: function(template) {
+      this.state._PlayerStats.strength = template.strength || 10;
+      this.state._PlayerStats.intelligence = template.intelligence || 10;
+      this.state._PlayerStats.vitality = template.vitality || 10;
+      this.state._PlayerStats.agility = template.agility || 10;
+    }
+  },
+  METHODS: {
+    getStr: function(){
+      return this.state._PlayerStats.strength;
+    },
+    setStr: function(strength){
+      this.state._PlayerStats.strength = strength;
+    },
+    addStr: function(strength){
+      this.state._PlayerStats.strength += strength;
+    },
+    getInt: function(){
+      return this.state._PlayerStats.intelligence;
+    },
+    setInt: function(intelligence){
+      this.state._PlayerStats.intelligence = intelligence;
+    },
+    addInt: function(intelligence){
+      this.state._PlayerStats.intelligence += intelligence;
+    },
+    getVit: function(){
+      return this.state._PlayerStats.vitality;
+    },
+    setVit: function(vitality){
+      this.state._PlayerStats.vitality = vitality;
+    },
+    addVit: function(vitality){
+      this.state._PlayerStats.vitality += vitality;
+    },
+    getAgi: function(){
+      return this.state._PlayerStats.agility;
+    },
+    setAgi: function(agility){
+      this.state._PlayerStats.agility = agility;
+    },
+    addAgi: function(agility){
+      this.state._PlayerStats.agility += agility;
+    },
+    getSP: function(){
+      return this.state._PlayerStats.statPoints;
+    },
+    setSP: function(statPoints){
+      this.state._PlayerStats.statPoints = statPoints;
+    },
+    addSP: function(statPoints){
+      this.state._PlayerStats.statPoints += statPoints;
+    }
+  },
+  LISTENERS: {
+    'levelStats': function() {
+      this.addSP(3);
+    }
+  }
+};
+
+//******************************************
