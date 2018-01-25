@@ -15956,7 +15956,6 @@ var LevelMode = exports.LevelMode = function (_UIMode8) {
       display.drawText(25, 5, "Press 3 to Raise Your Vitality");
       display.drawText(25, 6, "Press 4 to Raise Your Agility");
       if (this.getAvatar().getSP() == 0) {
-        display.drawText(28, 15, "Press any key to continue");
         this.Game.switchMode('play');
         return true;
       }
