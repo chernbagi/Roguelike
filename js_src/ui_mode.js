@@ -489,6 +489,7 @@ export class LevelMode extends UIMode {
     let eventOutput = this.levelHandler.handleInput(eventType, evt);
     if (eventOutput == '1') {
       this.getAvatar().addStr(1);
+      this.getAvatar().setMeleeDamage(3 + (this.getAvatar().getStr()-10) * 2)
       this.getAvatar().addSP(-1);
       Message.send('1 Strength Point Added');
       return true;
@@ -501,6 +502,8 @@ export class LevelMode extends UIMode {
     }
     if (eventOutput == '3') {
       this.getAvatar().addVit(1);
+      this.getAvatar().setMaxHp((this.getAvatar().getVit() + (this.getAvatar().getLevel() - 1)));
+      this.getAvatar().setHp(this.getAvatar().getMaxHp());
       this.getAvatar().addSP(-1);
       Message.send('1 Vitality Point Added');
       return true;
@@ -512,9 +515,6 @@ export class LevelMode extends UIMode {
       return true;
     }
 
-    this.getAvatar().setMaxHp((this.getAvatar().getVit() + (this.getAvatar().getLevel() - 1)));
-    this.getAvatar().setHp(this.getAvatar().getMaxHp());
-    this.getAvatar().setMeleeDamage(3 + (this.getAvatar().getStr()-10) * 2)
   }
 
    render(display){
