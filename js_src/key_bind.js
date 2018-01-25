@@ -11,7 +11,7 @@ export class StartupInput extends keyBinder {
     if (eventType == 'keyup') {
       console.dir(this);
       console.log(this.Game);
-      this.Game.switchMode('persistence');
+      this.Game.switchMode('story');
       return true;
     }
   }
@@ -65,7 +65,7 @@ export class PersistenceInput extends keyBinder {
     if (eventType == 'keyup') {
       if (evt.key=="n" || evt.key == "N"){
         this.Game.setupNewGame();
-        this.Game.switchMode('play');
+        this.Game.switchMode('level');
         return(true);
       }
       if (evt.key=="s" || evt.key=="S" || evt.key== "l" || evt.key=="L"){
@@ -89,6 +89,22 @@ export class LevelInput extends keyBinder{
       if (evt.key == "1" || evt.key == "2" || evt.key == "3" || evt.key == "4") {
         return evt.key;
       }
+    }
+  }
+}
+export class StoryInput extends keyBinder {
+  handleInput(eventType, evt) {
+    if (eventType == 'keyup') {
+      this.Game.switchMode('control');
+      return true;
+    }
+  }
+}
+export class ControlInput extends keyBinder {
+  handleInput(eventType, evt) {
+    if (eventType == 'keyup') {
+      this.Game.switchMode('persistence');
+      return true;
     }
   }
 }

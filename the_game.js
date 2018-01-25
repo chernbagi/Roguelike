@@ -15133,6 +15133,8 @@ var Game = exports.Game = {
     this.modes.help = new _ui_mode.HelpMode(this);
     this.modes.persistence = new _ui_mode.PersistenceMode(this);
     this.modes.level = new _ui_mode.LevelMode(this);
+    this.modes.story = new _ui_mode.StoryMode(this);
+    this.modes.control = new _ui_mode.ControlMode(this);
   },
 
   switchMode: function switchMode(newModeName) {
@@ -15230,7 +15232,7 @@ var Game = exports.Game = {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.LevelMode = exports.PersistenceMode = exports.HelpMode = exports.CacheMode = exports.LoseMode = exports.WinMode = exports.PlayMode = exports.StartupMode = undefined;
+exports.ControlMode = exports.StoryMode = exports.LevelMode = exports.PersistenceMode = exports.HelpMode = exports.CacheMode = exports.LoseMode = exports.WinMode = exports.PlayMode = exports.StartupMode = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -15719,8 +15721,8 @@ var HelpMode = exports.HelpMode = function (_UIMode6) {
     value: function render(display) {
       display.clear();
       display.drawText(35, 1, "Help Mode:");
-      display.drawText(1, 2, "Playmode Controls: wasd to move, k to win, l to lose, r to retreat a level");
-      display.drawText(1, 3, "c to enter cache mode, and esc to enter persistence mode");
+      display.drawText(1, 2, "Playmode Controls: wasd to move, k to win, l to lose, r to retreat a level,");
+      display.drawText(1, 3, "t to advance a level,c to enter cache mode, and esc to enter persistence mode");
       display.drawText(1, 4, "persistence mode: n for new game, s to save, l to load, escape to exit");
       display.drawText(1, 5, "cache mode: escape to exit");
       display.drawText(1, 6, "upon winning or losing, hit r to retry");
@@ -15966,6 +15968,82 @@ var LevelMode = exports.LevelMode = function (_UIMode8) {
   }]);
 
   return LevelMode;
+}(UIMode);
+
+var StoryMode = exports.StoryMode = function (_UIMode9) {
+  _inherits(StoryMode, _UIMode9);
+
+  function StoryMode() {
+    _classCallCheck(this, StoryMode);
+
+    return _possibleConstructorReturn(this, (StoryMode.__proto__ || Object.getPrototypeOf(StoryMode)).apply(this, arguments));
+  }
+
+  _createClass(StoryMode, [{
+    key: 'enter',
+    value: function enter() {
+      if (!this.storyHandler) {
+        this.storyHandler = new _key_bind.StoryInput(this.Game);
+      }
+    }
+  }, {
+    key: 'render',
+    value: function render(display) {
+      display.clear();
+      display.drawText(0, 0, "Your nation is at war with a neighboring country. You are the last hero your");
+      display.drawText(0, 1, "nation has. The enemy army vastly outnumbers your own. In an act of desperation,");
+      display.drawText(0, 2, "your king has sent you to launch a preemtive strike against the opposing nation");
+      display.drawText(0, 3, "to allow for the tiniest chance of victory in this great war for survival.");
+      display.drawText(0, 5, "The enemy army marches unforgivingly towards your own camp. You must cripple");
+      display.drawText(0, 6, "the enemy quickly, before they have a chance to reach your nation\'s army and");
+      display.drawText(0, 7, "destroy them. You have ten days to complete your task.");
+      display.drawText(0, 9, "Oh great hero, last hope of your nation, sally forth and strike a blow that will");
+      display.drawText(0, 10, "not only save your people, but also be recorded in the annals of history for all");
+      display.drawText(0, 11, "to wonder at!");
+      display.drawText(28, 15, "Press any key to continue");
+    }
+  }, {
+    key: 'handleInput',
+    value: function handleInput(eventType, evt) {
+      return this.storyHandler.handleInput(eventType, evt);
+    }
+  }]);
+
+  return StoryMode;
+}(UIMode);
+
+var ControlMode = exports.ControlMode = function (_UIMode10) {
+  _inherits(ControlMode, _UIMode10);
+
+  function ControlMode() {
+    _classCallCheck(this, ControlMode);
+
+    return _possibleConstructorReturn(this, (ControlMode.__proto__ || Object.getPrototypeOf(ControlMode)).apply(this, arguments));
+  }
+
+  _createClass(ControlMode, [{
+    key: 'enter',
+    value: function enter() {
+      if (!this.controlHandler) {
+        this.controlHandler = new _key_bind.ControlInput(this.Game);
+      }
+    }
+  }, {
+    key: 'render',
+    value: function render(display) {
+      display.clear();
+      display.drawText(0, 0, "Use wsad to move. To challange a higher level before all enemies on the current");
+      display.drawText(0, 1, "level have been defeated, press t. To escape to a lower level, press r.");
+      display.drawText(0, 2, "To execute a melee attack, merely bump into an enemy.");
+    }
+  }, {
+    key: 'handleInput',
+    value: function handleInput(eventType, evt) {
+      return this.controlHandler.handleInput(eventType, evt);
+    }
+  }]);
+
+  return ControlMode;
 }(UIMode);
 
 /***/ }),
@@ -17247,7 +17325,7 @@ var PlayerStats = exports.PlayerStats = {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.LevelInput = exports.PersistenceInput = exports.HCInput = exports.EndInput = exports.PlayInput = exports.StartupInput = undefined;
+exports.ControlInput = exports.StoryInput = exports.LevelInput = exports.PersistenceInput = exports.HCInput = exports.EndInput = exports.PlayInput = exports.StartupInput = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -17281,7 +17359,7 @@ var StartupInput = exports.StartupInput = function (_keyBinder) {
       if (eventType == 'keyup') {
         console.dir(this);
         console.log(this.Game);
-        this.Game.switchMode('persistence');
+        this.Game.switchMode('story');
         return true;
       }
     }
@@ -17388,7 +17466,7 @@ var PersistenceInput = exports.PersistenceInput = function (_keyBinder5) {
       if (eventType == 'keyup') {
         if (evt.key == "n" || evt.key == "N") {
           this.Game.setupNewGame();
-          this.Game.switchMode('play');
+          this.Game.switchMode('level');
           return true;
         }
         if (evt.key == "s" || evt.key == "S" || evt.key == "l" || evt.key == "L") {
@@ -17431,6 +17509,50 @@ var LevelInput = exports.LevelInput = function (_keyBinder6) {
   }]);
 
   return LevelInput;
+}(keyBinder);
+
+var StoryInput = exports.StoryInput = function (_keyBinder7) {
+  _inherits(StoryInput, _keyBinder7);
+
+  function StoryInput() {
+    _classCallCheck(this, StoryInput);
+
+    return _possibleConstructorReturn(this, (StoryInput.__proto__ || Object.getPrototypeOf(StoryInput)).apply(this, arguments));
+  }
+
+  _createClass(StoryInput, [{
+    key: 'handleInput',
+    value: function handleInput(eventType, evt) {
+      if (eventType == 'keyup') {
+        this.Game.switchMode('control');
+        return true;
+      }
+    }
+  }]);
+
+  return StoryInput;
+}(keyBinder);
+
+var ControlInput = exports.ControlInput = function (_keyBinder8) {
+  _inherits(ControlInput, _keyBinder8);
+
+  function ControlInput() {
+    _classCallCheck(this, ControlInput);
+
+    return _possibleConstructorReturn(this, (ControlInput.__proto__ || Object.getPrototypeOf(ControlInput)).apply(this, arguments));
+  }
+
+  _createClass(ControlInput, [{
+    key: 'handleInput',
+    value: function handleInput(eventType, evt) {
+      if (eventType == 'keyup') {
+        this.Game.switchMode('persistence');
+        return true;
+      }
+    }
+  }]);
+
+  return ControlInput;
 }(keyBinder);
 
 /***/ })

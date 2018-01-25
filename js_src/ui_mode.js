@@ -3,7 +3,7 @@ import {MapMaker} from './map.js';
 import {DisplaySymbol} from'./display_symbol.js';
 import {DATASTORE, clearDataStore} from './datastore.js';
 import {EntityFactory} from './entities.js';
-import {StartupInput, PlayInput, EndInput, HCInput, PersistenceInput, LevelInput} from './key_bind.js';
+import {StartupInput, PlayInput, EndInput, HCInput, PersistenceInput, LevelInput, StoryInput, ControlInput} from './key_bind.js';
 import {TIME_ENGINE, SCHEDULER} from './timing.js';
 import ROT from 'rot-js';
 
@@ -331,8 +331,8 @@ export class HelpMode extends UIMode {
   render(display) {
     display.clear();
     display.drawText(35, 1, "Help Mode:");
-    display.drawText(1, 2, "Playmode Controls: wasd to move, k to win, l to lose, r to retreat a level");
-    display.drawText(1, 3, "c to enter cache mode, and esc to enter persistence mode");
+    display.drawText(1, 2, "Playmode Controls: wasd to move, k to win, l to lose, r to retreat a level,");
+    display.drawText(1, 3, "t to advance a level,c to enter cache mode, and esc to enter persistence mode");
     display.drawText(1, 4, "persistence mode: n for new game, s to save, l to load, escape to exit");
     display.drawText(1, 5, "cache mode: escape to exit");
     display.drawText(1, 6, "upon winning or losing, hit r to retry");
@@ -531,5 +531,48 @@ export class LevelMode extends UIMode {
     display.drawText(0, 4, "Intelligence: " + this.getAvatar().getInt());
     display.drawText(0, 5, "Vitality: " + this.getAvatar().getVit());
     display.drawText(0, 6, "Agility: " + this.getAvatar().getAgi());
+  }
+}
+export class StoryMode extends UIMode {
+  enter() {
+    if (!this.storyHandler){
+      this.storyHandler = new StoryInput(this.Game);
+    }
+  }
+  render(display) {
+    display.clear();
+    display.drawText(0, 0, "Your nation is at war with a neighboring country. You are the last hero your");
+    display.drawText(0, 1, "nation has. The enemy army vastly outnumbers your own. In an act of desperation,");
+    display.drawText(0, 2, "your king has sent you to launch a preemtive strike against the opposing nation");
+    display.drawText(0, 3, "to allow for the tiniest chance of victory in this great war for survival.");
+    display.drawText(0, 5, "The enemy army marches unforgivingly towards your own camp. You must cripple");
+    display.drawText(0, 6, "the enemy quickly, before they have a chance to reach your nation\'s army and");
+    display.drawText(0, 7, "destroy them. You have ten days to complete your task.");
+    display.drawText(0, 9, "Oh great hero, last hope of your nation, sally forth and strike a blow that will");
+    display.drawText(0, 10, "not only save your people, but also be recorded in the annals of history for all");
+    display.drawText(0, 11, "to wonder at!");
+    display.drawText(28, 15, "Press any key to continue");
+
+  }
+  handleInput(eventType, evt){
+    return this.storyHandler.handleInput(eventType, evt);
+  }
+}
+
+export class ControlMode extends UIMode {
+  enter() {
+    if (!this.controlHandler){
+      this.controlHandler = new ControlInput(this.Game);
+    }
+  }
+  render(display) {
+    display.clear();
+    display.drawText(0, 0, "Use wsad to move. To challange a higher level before all enemies on the current");
+    display.drawText(0, 1, "level have been defeated, press t. To escape to a lower level, press r.");
+    display.drawText(0, 2, "To execute a melee attack, merely bump into an enemy.");
+
+  }
+  handleInput(eventType, evt){
+    return this.controlHandler.handleInput(eventType, evt);
   }
 }
