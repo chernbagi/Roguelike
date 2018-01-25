@@ -15561,6 +15561,7 @@ var PlayMode = exports.PlayMode = function (_UIMode2) {
         map.addEntityAt(EntityFactory.create('royal guard'), x, y - 1);
       } else if (this.state.level >= 20) {
         this.Game.switchMode('win');
+        return true;
       }
     }
   }, {
@@ -15939,6 +15940,7 @@ var LevelMode = exports.LevelMode = function (_UIMode8) {
         _message.Message.send('1 Agility Point Added');
         return true;
       }
+
       this.getAvatar().setMaxHp(this.getAvatar().getVit() + (this.getAvatar().getLevel() - 1));
       this.getAvatar().setHp(this.getAvatar().getMaxHp());
       this.getAvatar().setMeleeDamage(3 + (this.getAvatar().getStr() - 10) * 2);
@@ -15953,6 +15955,11 @@ var LevelMode = exports.LevelMode = function (_UIMode8) {
       display.drawText(23, 4, "Press 2 to Raise Your Intelligence");
       display.drawText(25, 5, "Press 3 to Raise Your Vitality");
       display.drawText(25, 6, "Press 4 to Raise Your Agility");
+      if (this.getAvatar().getSP() == 0) {
+        display.drawText(28, 15, "Press any key to continue");
+        this.Game.switchMode('play');
+        return true;
+      }
     }
   }, {
     key: 'renderAvatar',
@@ -16035,6 +16042,14 @@ var ControlMode = exports.ControlMode = function (_UIMode10) {
       display.drawText(0, 0, "Use wsad to move. To challange a higher level before all enemies on the current");
       display.drawText(0, 1, "level have been defeated, press t. To escape to a lower level, press r.");
       display.drawText(0, 2, "To execute a melee attack, merely bump into an enemy.");
+
+      display.drawText(0, 5, "You will start with 40 stat points to be distributed amongst 4 stats, strength,");
+      display.drawText(0, 6, "intelligence, vitality, and agility. Strength controls your melee attack");
+      display.drawText(0, 7, "power, intelligence your mana for special attacks and special attack");
+      display.drawText(0, 8, "power, vitality your health, and agility your movement speed and");
+      display.drawText(0, 9, "dodging ability (Currently intelligence has no effects, they are to be");
+      display.drawText(0, 10, "implemented soon).");
+      display.drawText(28, 15, "Press any key to continue");
     }
   }, {
     key: 'handleInput',
@@ -17381,10 +17396,6 @@ var PlayInput = exports.PlayInput = function (_keyBinder2) {
     key: 'handleInput',
     value: function handleInput(eventType, evt) {
       if (eventType == 'keyup') {
-        if (evt.key == "k") {
-          this.Game.switchMode('win');
-          return true;
-        }
         if (evt.key == "l") {
           this.Game.switchMode('level');
           return true;

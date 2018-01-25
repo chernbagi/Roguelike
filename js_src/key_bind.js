@@ -19,10 +19,6 @@ export class StartupInput extends keyBinder {
 export class PlayInput extends keyBinder{
   handleInput(eventType, evt){
     if (eventType == 'keyup') {
-      if (evt.key == "k") {
-        this.Game.switchMode('win');
-        return true;
-      }
       if (evt.key == "l") {
         this.Game.switchMode('level');
         return true;
