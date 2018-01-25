@@ -16465,7 +16465,7 @@ EntityFactory.learn({
   mixinNames: ['WalkerCorporeal', 'HitPoints', 'MeleeAttacker', 'ActorWanderer', 'PlayerMessage', 'ExpEnemy'],
   maxHp: 25,
   meleeDamage: 5,
-  exp: 10
+  exp: 5
 });
 
 EntityFactory.learn({
@@ -16475,7 +16475,7 @@ EntityFactory.learn({
   mixinNames: ['WalkerCorporeal', 'HitPoints', 'MeleeAttacker', 'ActorWanderer', 'PlayerMessage', 'ExpEnemy'],
   maxHp: 100,
   meleeDamage: 20,
-  exp: 50
+  exp: 10
 });
 
 EntityFactory.learn({
@@ -16485,7 +16485,7 @@ EntityFactory.learn({
   mixinNames: ['WalkerCorporeal', 'HitPoints', 'MeleeAttacker', 'ActorWanderer', 'PlayerMessage', 'ExpEnemy'],
   maxHp: 50,
   meleeDamage: 25,
-  exp: 200
+  exp: 50
 });
 
 EntityFactory.learn({
