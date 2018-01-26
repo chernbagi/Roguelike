@@ -43,7 +43,77 @@ class Map {
     this.state.mapPostoEntityID[`${newX},${newY}`] = ent.getID()
     this.state.entityIDtoMapPos[ent.getID()] = `${newX},${newY}`
   }
-
+  findClosestEnemyEntity(ent) {
+    let minDist = 1000;
+    let entPos = this.state.entityIDtoMapPos[ent.getID()];
+    for (let entID in this.state.entityIDtoMapPos) {
+      let dist = Math.sqrt(Math.pow((entPos.charAt(0)*1 - this.state.entityIDtoMapPos[entID].charAt(0)*1), 2) + Math.pow((entPos.charAt(2)*1 - this.state.entityIDtoMapPos[entID].charAt(2)*1), 2));
+      if (dist < minDist && dist != 0 && DATASTORE.ENTITIES[entID].name != 'tree' && DATASTORE.ENTITIES[entID].name != 'avatar') {
+        minDist = dist;
+        let closeEntID = entID;
+      }
+    }
+    if (DATASTORE.ENTITIES[closeEntID]){
+      return DATASTORE.ENTITIES[closeEntID];
+    }
+    return false;
+  }
+  findClosestEntInLine(ent, direction) {
+    if (direction == 'w') {
+      for (let i = (ent.getY()-1); i > 0; i--){
+        for (let entID in this.state.entityIDtoMapPos) {
+          if (DATASTORE.ENTITIES[entID].getPos() == `${ent.getX()},${i}`) {
+            return DATASTORE.ENTITIES[entID];
+          }
+        }
+      }
+      return false;
+    }
+    if (direction == 's') {
+      for (let i = (ent.getY()-1); i < this.getXdim(); i++){
+        for (let entID in this.state.entityIDtoMapPos) {
+          if (DATASTORE.ENTITIES[entID].getPos() == `${ent.getX()},${i}`) {
+            return DATASTORE.ENTITIES[entID];
+          }
+        }
+      }
+      return false;
+    }
+    if (direction == 'a') {
+      for (let i = (ent.getX()-1); i > 0; i--){
+        for (let entID in this.state.entityIDtoMapPos) {
+          if (DATASTORE.ENTITIES[entID].getPos() == `${i},${ent.getY()}`) {
+            return DATASTORE.ENTITIES[entID];
+          }
+        }
+      }
+      return false;
+    }
+    if (direction == 'd') {
+      for (let i = (ent.getX()-1); i < this.getXdim(); i++){
+        for (let entID in this.state.entityIDtoMapPos) {
+          if (DATASTORE.ENTITIES[entID].getPos() == `${i},${ent.getY()}`) {
+            return DATASTORE.ENTITIES[entID];
+          }
+        }
+      }
+      return false;
+    }
+  }
+  findEntsInArea(x1, y1, x2, y2) {
+    let ents = {};
+    for (let entID in this.state.entityIDtoMapPos) {
+      let x = DATASTORE.ENTITIES[entID].getX();
+      let y = DATASTORE.ENTITIES[entID].getY();
+      if (x1 < x && x < x2 && y1 < y && y < y2) {
+        ents[entID] == DATASTORE.ENTITIES[entID];
+      }
+    }
+    if (ents != {}) {
+      return ents;
+    }
+    return false;
+  }
   extractEntity(ent){
     delete this.state.mapPostoEntityID[this.state.entityIDtoMapPos[ent.getID()]];
     delete this.state.entityIDtoMapPos[ent.getID()];

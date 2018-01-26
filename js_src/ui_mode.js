@@ -3,7 +3,7 @@ import {MapMaker} from './map.js';
 import {DisplaySymbol} from'./display_symbol.js';
 import {DATASTORE, clearDataStore} from './datastore.js';
 import {EntityFactory} from './entities.js';
-import {StartupInput, PlayInput, EndInput, HCInput, PersistenceInput, LevelInput, StoryInput, ControlInput} from './key_bind.js';
+import {StartupInput, PlayInput, EndInput, HCInput, PersistenceInput, LevelInput, StoryInput, ControlInput, AimInput} from './key_bind.js';
 import {TIME_ENGINE, SCHEDULER} from './timing.js';
 import ROT from 'rot-js';
 
@@ -177,6 +177,10 @@ export class PlayMode extends UIMode {
       this.advance();
       return true;
     }
+    if (eventOutput == 'z') {
+      this.Game.switchMode('aim');
+      return true;
+    }
     return eventOutput;
   }
   moveCamera(dx, dy){
@@ -231,8 +235,8 @@ export class PlayMode extends UIMode {
       let num = ROT.RNG.getUniform() * 10 + 5;
       this.makeEntites(num, map, EntityFactory);
     } else if (this.state.level == 20) {
-      let x = map.getXdim() / 2
-      let y = map.getYdim() / 2
+      let x = map.getXdim() / 2;
+      let y = map.getYdim() / 2;
       map.tileGrid[x][y].name == 'floor';
       map.tileGrid[x + 1][y].name == 'floor';
       map.tileGrid[x - 1][y].name == 'floor';
@@ -424,8 +428,16 @@ export class PersistenceMode extends UIMode {
           ent.state._HitPoints.maxHp = entState._HitPoints.maxHp;
           ent.state._HitPoints.curHp = entState._HitPoints.curHp;
         }
+        if (entState._ManaPoints) {
+          ent.state._ManaPoints.maxHp = entState._ManaPoints.maxHp;
+          ent.state._ManaPoints.curHp = entState._ManaPoints.curHp;
+        }
         if (entState._TimeTracker) {
           ent.state._TimeTracker.timeTaken = entState._TimeTracker.timeTaken;
+        }
+        if (entState._RangedAttackerEnemy) {
+          ent.state._RangedAttackerEnemy.rangedDamage = entState._RangedAttackerEnemy.rangedDamage;
+          ent.state._RangedAttackerEnemy.magicDamage = entState._RangedAttackerEnemy.magicDamage;
         }
         if (entState._MeleeAttacker) {
           ent.state._MeleeAttacker.meleeDamage = entState._MeleeAttacker.meleeDamage;
@@ -476,7 +488,6 @@ export class LevelMode extends UIMode {
     if (!this.levelHandler){
       this.levelHandler = new LevelInput(this.Game);
     }
-    TIME_ENGINE.unlock();
     if (this.getAvatar().getSP() == 0){
       Message.send('you have no stat points!')
       this.Game.switchMode('play');
@@ -489,13 +500,16 @@ export class LevelMode extends UIMode {
     let eventOutput = this.levelHandler.handleInput(eventType, evt);
     if (eventOutput == '1') {
       this.getAvatar().addStr(1);
-      this.getAvatar().setMeleeDamage(3 + (this.getAvatar().getStr()-10) * 2)
+      this.getAvatar().setMeleeDamage(3 + (this.getAvatar().getStr()-10) * 2);
+      this.getAvatar().setRangedDamage((this.getAvatar().getStr()/2+this.getAvatar().getAgi())/2-10);
       this.getAvatar().addSP(-1);
       Message.send('1 Strength Point Added');
       return true;
     }
     if (eventOutput == '2') {
       this.getAvatar().addInt(1);
+      this.getAvatar().setMp((this.getAvatar().getInt() + (this.getAvatar().getLevel() - 1)))
+      this.getAvatar().setMeleeDamage(3 + (this.getAvatar().getInt()-10) * 2)
       this.getAvatar().addSP(-1);
       Message.send('1 Intelligence Point Added');
       return true;
@@ -511,6 +525,7 @@ export class LevelMode extends UIMode {
     if (eventOutput == '4') {
       this.getAvatar().addAgi(1);
       this.getAvatar().addSP(-1);
+      this.getAvatar().setRangedDamage((this.getAvatar().getStr()/2+this.getAvatar().getAgi())/2-10);
       Message.send('1 Agility Point Added');
       return true;
     }
@@ -591,5 +606,65 @@ export class ControlMode extends UIMode {
   }
   handleInput(eventType, evt){
     return this.controlHandler.handleInput(eventType, evt);
+  }
+}
+
+export class AimMode extends UIMode{
+  enter() {
+    if (!this.aimHandler){
+      this.aimHandler = new AimInput(this.Game);
+    }
+    Message.send("Entered Aim Mode. Select your Attack")
+  }
+  getAvatar() {
+    return DATASTORE.ENTITIES[this.Game.modes.play.state.avatarID];
+  }
+  handleInput(eventType, evt){
+    let secondaryOutput = false;
+    let eventOutput = this.aimHandler.handleInput(eventType, evt);
+    console.log(eventOutput);
+    if (eventOutput == '1' || eventOutput == '2' || eventOutput == '3' || eventOutput == '4'){
+      console.log('hello')
+      this.choice = eventOutput;
+    }
+    console.log(this.choice);
+    Message.send("Choose a direction to aim your attack with wsad");
+    if (eventType == 'keyup') {
+      if (evt.key == 'w' || evt.key == 's' || evt.key == 'a' || evt.key == 'd'){
+        secondaryOutput = evt.key;
+      }
+    }
+    if (this.choice == '1') {
+      console.log(secondaryOutput)
+      if (secondaryOutput != false){
+        console.log(secondaryOutput)
+        this.getAvatar().bowAttack(secondaryOutput);
+      }
+      return true;
+    }
+    if (this.choice == '2') {
+      if (secondaryOutput != false){
+        this.getAvatar().windAttack(secondaryOutput);
+      }
+      return true;
+    }
+    if (this.choice == '3') {
+      if (secondaryOutput != false){
+        this.getAvatar().fireAttack(secondaryOutput);
+      }
+      return true;
+    }
+    if (this.choice == '4') {
+      if (secondaryOutput != false){
+        this.getAvatar().lightningAttack(secondaryOutput);
+      }
+      return true;
+    }
+    return eventOutput;
+  }
+  render (display) {
+    display.drawText(19, 0, "AIM MODE: SELECT FROM THE FOLLOWING ATTACKS");
+    display.drawText(0, 1, "1: Bow  2: Wind Blade  3: Inferno  4: Chain Lightning")
+    display.drawText(28, 2, "Press escape to exit");
   }
 }

@@ -15135,6 +15135,7 @@ var Game = exports.Game = {
     this.modes.level = new _ui_mode.LevelMode(this);
     this.modes.story = new _ui_mode.StoryMode(this);
     this.modes.control = new _ui_mode.ControlMode(this);
+    this.modes.aim = new _ui_mode.AimMode(this);
   },
 
   switchMode: function switchMode(newModeName) {
@@ -15232,7 +15233,7 @@ var Game = exports.Game = {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.ControlMode = exports.StoryMode = exports.LevelMode = exports.PersistenceMode = exports.HelpMode = exports.CacheMode = exports.LoseMode = exports.WinMode = exports.PlayMode = exports.StartupMode = undefined;
+exports.AimMode = exports.ControlMode = exports.StoryMode = exports.LevelMode = exports.PersistenceMode = exports.HelpMode = exports.CacheMode = exports.LoseMode = exports.WinMode = exports.PlayMode = exports.StartupMode = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -15479,6 +15480,10 @@ var PlayMode = exports.PlayMode = function (_UIMode2) {
       }
       if (eventOutput == 't') {
         this.advance();
+        return true;
+      }
+      if (eventOutput == 'z') {
+        this.Game.switchMode('aim');
         return true;
       }
       return eventOutput;
@@ -15835,8 +15840,16 @@ var PersistenceMode = exports.PersistenceMode = function (_UIMode7) {
           ent.state._HitPoints.maxHp = entState._HitPoints.maxHp;
           ent.state._HitPoints.curHp = entState._HitPoints.curHp;
         }
+        if (entState._ManaPoints) {
+          ent.state._ManaPoints.maxHp = entState._ManaPoints.maxHp;
+          ent.state._ManaPoints.curHp = entState._ManaPoints.curHp;
+        }
         if (entState._TimeTracker) {
           ent.state._TimeTracker.timeTaken = entState._TimeTracker.timeTaken;
+        }
+        if (entState._RangedAttackerEnemy) {
+          ent.state._RangedAttackerEnemy.rangedDamage = entState._RangedAttackerEnemy.rangedDamage;
+          ent.state._RangedAttackerEnemy.magicDamage = entState._RangedAttackerEnemy.magicDamage;
         }
         if (entState._MeleeAttacker) {
           ent.state._MeleeAttacker.meleeDamage = entState._MeleeAttacker.meleeDamage;
@@ -15901,7 +15914,6 @@ var LevelMode = exports.LevelMode = function (_UIMode8) {
       if (!this.levelHandler) {
         this.levelHandler = new _key_bind.LevelInput(this.Game);
       }
-      _timing.TIME_ENGINE.unlock();
       if (this.getAvatar().getSP() == 0) {
         _message.Message.send('you have no stat points!');
         this.Game.switchMode('play');
@@ -15919,12 +15931,15 @@ var LevelMode = exports.LevelMode = function (_UIMode8) {
       if (eventOutput == '1') {
         this.getAvatar().addStr(1);
         this.getAvatar().setMeleeDamage(3 + (this.getAvatar().getStr() - 10) * 2);
+        this.getAvatar().setRangedDamage((this.getAvatar().getStr() / 2 + this.getAvatar().getAgi()) / 2 - 10);
         this.getAvatar().addSP(-1);
         _message.Message.send('1 Strength Point Added');
         return true;
       }
       if (eventOutput == '2') {
         this.getAvatar().addInt(1);
+        this.getAvatar().setMp(this.getAvatar().getInt() + (this.getAvatar().getLevel() - 1));
+        this.getAvatar().setMeleeDamage(3 + (this.getAvatar().getInt() - 10) * 2);
         this.getAvatar().addSP(-1);
         _message.Message.send('1 Intelligence Point Added');
         return true;
@@ -15940,6 +15955,7 @@ var LevelMode = exports.LevelMode = function (_UIMode8) {
       if (eventOutput == '4') {
         this.getAvatar().addAgi(1);
         this.getAvatar().addSP(-1);
+        this.getAvatar().setRangedDamage((this.getAvatar().getStr() / 2 + this.getAvatar().getAgi()) / 2 - 10);
         _message.Message.send('1 Agility Point Added');
         return true;
       }
@@ -16059,6 +16075,85 @@ var ControlMode = exports.ControlMode = function (_UIMode10) {
   return ControlMode;
 }(UIMode);
 
+var AimMode = exports.AimMode = function (_UIMode11) {
+  _inherits(AimMode, _UIMode11);
+
+  function AimMode() {
+    _classCallCheck(this, AimMode);
+
+    return _possibleConstructorReturn(this, (AimMode.__proto__ || Object.getPrototypeOf(AimMode)).apply(this, arguments));
+  }
+
+  _createClass(AimMode, [{
+    key: 'enter',
+    value: function enter() {
+      if (!this.aimHandler) {
+        this.aimHandler = new _key_bind.AimInput(this.Game);
+      }
+      _message.Message.send("Entered Aim Mode. Select your Attack");
+    }
+  }, {
+    key: 'getAvatar',
+    value: function getAvatar() {
+      return _datastore.DATASTORE.ENTITIES[this.Game.modes.play.state.avatarID];
+    }
+  }, {
+    key: 'handleInput',
+    value: function handleInput(eventType, evt) {
+      var secondaryOutput = false;
+      var eventOutput = this.aimHandler.handleInput(eventType, evt);
+      console.log(eventOutput);
+      if (eventOutput == '1' || eventOutput == '2' || eventOutput == '3' || eventOutput == '4') {
+        console.log('hello');
+        this.choice = eventOutput;
+      }
+      console.log(this.choice);
+      _message.Message.send("Choose a direction to aim your attack with wsad");
+      if (eventType == 'keyup') {
+        if (evt.key == 'w' || evt.key == 's' || evt.key == 'a' || evt.key == 'd') {
+          secondaryOutput = evt.key;
+        }
+      }
+      if (this.choice == '1') {
+        console.log(secondaryOutput);
+        if (secondaryOutput != false) {
+          console.log(secondaryOutput);
+          this.getAvatar().bowAttack(secondaryOutput);
+        }
+        return true;
+      }
+      if (this.choice == '2') {
+        if (secondaryOutput != false) {
+          this.getAvatar().windAttack(secondaryOutput);
+        }
+        return true;
+      }
+      if (this.choice == '3') {
+        if (secondaryOutput != false) {
+          this.getAvatar().fireAttack(secondaryOutput);
+        }
+        return true;
+      }
+      if (this.choice == '4') {
+        if (secondaryOutput != false) {
+          this.getAvatar().lightningAttack(secondaryOutput);
+        }
+        return true;
+      }
+      return eventOutput;
+    }
+  }, {
+    key: 'render',
+    value: function render(display) {
+      display.drawText(19, 0, "AIM MODE: SELECT FROM THE FOLLOWING ATTACKS");
+      display.drawText(0, 1, "1: Bow  2: Wind Blade  3: Inferno  4: Chain Lightning");
+      display.drawText(28, 2, "Press escape to exit");
+    }
+  }]);
+
+  return AimMode;
+}(UIMode);
+
 /***/ }),
 /* 337 */
 /***/ (function(module, exports, __webpack_require__) {
@@ -16167,6 +16262,83 @@ var Map = function () {
 
       this.state.mapPostoEntityID[newX + ',' + newY] = ent.getID();
       this.state.entityIDtoMapPos[ent.getID()] = newX + ',' + newY;
+    }
+  }, {
+    key: 'findClosestEnemyEntity',
+    value: function findClosestEnemyEntity(ent) {
+      var minDist = 1000;
+      var entPos = this.state.entityIDtoMapPos[ent.getID()];
+      for (var entID in this.state.entityIDtoMapPos) {
+        var dist = Math.sqrt(Math.pow(entPos.charAt(0) * 1 - this.state.entityIDtoMapPos[entID].charAt(0) * 1, 2) + Math.pow(entPos.charAt(2) * 1 - this.state.entityIDtoMapPos[entID].charAt(2) * 1, 2));
+        if (dist < minDist && dist != 0 && _datastore.DATASTORE.ENTITIES[entID].name != 'tree' && _datastore.DATASTORE.ENTITIES[entID].name != 'avatar') {
+          minDist = dist;
+          var _closeEntID = entID;
+        }
+      }
+      if (_datastore.DATASTORE.ENTITIES[closeEntID]) {
+        return _datastore.DATASTORE.ENTITIES[closeEntID];
+      }
+      return false;
+    }
+  }, {
+    key: 'findClosestEntInLine',
+    value: function findClosestEntInLine(ent, direction) {
+      if (direction == 'w') {
+        for (var i = ent.getY() - 1; i > 0; i--) {
+          for (var entID in this.state.entityIDtoMapPos) {
+            if (_datastore.DATASTORE.ENTITIES[entID].getPos() == ent.getX() + ',' + i) {
+              return _datastore.DATASTORE.ENTITIES[entID];
+            }
+          }
+        }
+        return false;
+      }
+      if (direction == 's') {
+        for (var _i = ent.getY() - 1; _i < this.getXdim(); _i++) {
+          for (var _entID in this.state.entityIDtoMapPos) {
+            if (_datastore.DATASTORE.ENTITIES[_entID].getPos() == ent.getX() + ',' + _i) {
+              return _datastore.DATASTORE.ENTITIES[_entID];
+            }
+          }
+        }
+        return false;
+      }
+      if (direction == 'a') {
+        for (var _i2 = ent.getX() - 1; _i2 > 0; _i2--) {
+          for (var _entID2 in this.state.entityIDtoMapPos) {
+            if (_datastore.DATASTORE.ENTITIES[_entID2].getPos() == _i2 + ',' + ent.getY()) {
+              return _datastore.DATASTORE.ENTITIES[_entID2];
+            }
+          }
+        }
+        return false;
+      }
+      if (direction == 'd') {
+        for (var _i3 = ent.getX() - 1; _i3 < this.getXdim(); _i3++) {
+          for (var _entID3 in this.state.entityIDtoMapPos) {
+            if (_datastore.DATASTORE.ENTITIES[_entID3].getPos() == _i3 + ',' + ent.getY()) {
+              return _datastore.DATASTORE.ENTITIES[_entID3];
+            }
+          }
+        }
+        return false;
+      }
+    }
+  }, {
+    key: 'findEntsInArea',
+    value: function findEntsInArea(x1, y1, x2, y2) {
+      var ents = {};
+      for (var entID in this.state.entityIDtoMapPos) {
+        var x = _datastore.DATASTORE.ENTITIES[entID].getX();
+        var y = _datastore.DATASTORE.ENTITIES[entID].getY();
+        if (x1 < x && x < x2 && y1 < y && y < y2) {
+          ents[entID] == _datastore.DATASTORE.ENTITIES[entID];
+        }
+      }
+      if (ents != {}) {
+        return ents;
+      }
+      return false;
     }
   }, {
     key: 'extractEntity',
@@ -16434,7 +16606,7 @@ EntityFactory.learn({
   name: 'avatar',
   chr: '@',
   fg: '#eb4',
-  mixinNames: ['TimeTracker', 'WalkerCorporeal', 'PlayerMessage', 'HitPoints', 'MeleeAttacker', 'ActorPlayer', 'Levels', 'ExpPlayer', 'PlayerStats'],
+  mixinNames: ['TimeTracker', 'WalkerCorporeal', 'PlayerMessage', 'HitPoints', 'MeleeAttacker', 'ActorPlayer', 'Levels', 'ExpPlayer', 'PlayerStats', 'ManaPoints', 'RangedAttackerPlayer', 'RangedAttacks'],
   maxHp: 10,
   meleeDamage: 3
 });
@@ -16451,49 +16623,59 @@ EntityFactory.learn({
   name: 'soldier',
   chr: 'S',
   fg: '#eb4',
-  mixinNames: ['WalkerCorporeal', 'HitPoints', 'MeleeAttacker', 'ActorWanderer', 'PlayerMessage', 'ExpEnemy'],
+  mixinNames: ['WalkerCorporeal', 'HitPoints', 'MeleeAttacker', 'ActorWanderer', 'ExpEnemy'],
   maxHp: 5,
   meleeDamage: 1,
-  exp: 1
+  exp: 1,
+  allowedActionDuration: 1
 });
 
 EntityFactory.learn({
   name: 'centaurion',
   chr: 'C',
   fg: '#eb4',
-  mixinNames: ['WalkerCorporeal', 'HitPoints', 'MeleeAttacker', 'ActorWanderer', 'PlayerMessage', 'ExpEnemy'],
+  mixinNames: ['WalkerCorporeal', 'HitPoints', 'MeleeAttacker', 'ActorWanderer', 'ExpEnemy', 'RangedAttackerEnemy'],
   maxHp: 25,
   meleeDamage: 5,
-  exp: 5
+  exp: 7,
+  rangedDamage: 3,
+  allowedActionDuration: 2
 });
 
 EntityFactory.learn({
   name: 'general',
   chr: 'G',
   fg: '#eb4',
-  mixinNames: ['WalkerCorporeal', 'HitPoints', 'MeleeAttacker', 'ActorWanderer', 'PlayerMessage', 'ExpEnemy'],
+  mixinNames: ['WalkerCorporeal', 'HitPoints', 'MeleeAttacker', 'ActorWanderer', 'ExpEnemy', 'RangedAttackerEnemy'],
   maxHp: 100,
   meleeDamage: 20,
-  exp: 10
+  exp: 15,
+  rangedDamage: 12,
+  allowedActionDuration: 3
 });
 
 EntityFactory.learn({
   name: 'royal guard',
   chr: 'R',
   fg: '#eb4',
-  mixinNames: ['WalkerCorporeal', 'HitPoints', 'MeleeAttacker', 'ActorWanderer', 'PlayerMessage', 'ExpEnemy'],
+  mixinNames: ['WalkerCorporeal', 'HitPoints', 'MeleeAttacker', 'ActorWanderer', 'ExpEnemy', 'RangedAttackerEnemy'],
   maxHp: 50,
   meleeDamage: 25,
-  exp: 50
+  rangedDamage: 15,
+  exp: 50,
+  allowedActionDuration: 5
 });
 
 EntityFactory.learn({
   name: 'king',
   chr: 'K',
   fg: '#eb4',
-  mixinNames: ['WalkerCorporeal', 'HitPoints', 'MeleeAttacker', 'ActorWanderer', 'PlayerMessage'],
+  mixinNames: ['WalkerCorporeal', 'HitPoints', 'MeleeAttacker', 'ActorWanderer', 'RangedAttackerEnemy'],
   maxHp: 1,
-  meleeDamage: 1
+  meleeDamage: 1,
+  magicDamage: 100,
+  curMp: 2,
+  allowedActionDuration: 1
 });
 
 /***/ }),
@@ -16774,7 +16956,7 @@ var MixableSymbol = exports.MixableSymbol = function (_DisplaySymbol) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.PlayerStats = exports.Levels = exports.ExpEnemy = exports.ExpPlayer = exports.ActorPlayer = exports.ActorWanderer = exports.MeleeAttacker = exports.HitPoints = exports.WalkerCorporeal = exports.TimeTracker = exports.PlayerMessage = undefined;
+exports.RangedAttackerEnemy = exports.RangedAttacks = exports.RangedAttackerPlayer = exports.ManaPoints = exports.PlayerStats = exports.Levels = exports.ExpEnemy = exports.ExpPlayer = exports.ActorPlayer = exports.ActorWanderer = exports.MeleeAttacker = exports.HitPoints = exports.WalkerCorporeal = exports.TimeTracker = exports.PlayerMessage = undefined;
 
 var _message = __webpack_require__(95);
 
@@ -16928,7 +17110,7 @@ var HitPoints = exports.HitPoints = {
   METHODS: {
     gainHp: function gainHp(amt) {
       this.state._HitPoints.curHp += amt;
-      this.state._HitPoints.curHp - Math.min(this.state._HitPoints.maxHp, this.state._HitPoints.curHp);
+      this.state._HitPoints.curHp = Math.min(this.state._HitPoints.maxHp, this.state._HitPoints.curHp);
     },
     loseHp: function loseHp(amt) {
       this.state._HitPoints.curHp -= amt;
@@ -16951,8 +17133,8 @@ var HitPoints = exports.HitPoints = {
   LISTENERS: {
     'damaged': function damaged(evtData) {
       if (this.getAgi && this.getAgi() > 10) {
-        dodge = Math.pow(0.97, this.getAgi() - 10);
-        num = _rotJs2.default.RNG.getUniform();
+        var dodge = Math.pow(0.97, this.getAgi() - 10);
+        var num = _rotJs2.default.RNG.getUniform();
         if (num > dodge) {
           console.log('dodged');
           _message.Message.send('dodged attack');
@@ -16998,17 +17180,43 @@ var MeleeAttacker = exports.MeleeAttacker = {
     },
     setMeleeDamage: function setMeleeDamage(amt) {
       this.state._MeleeAttacker.meleeDamage = amt;
+    },
+    surroundingAttack: function surroundingAttack() {
+      var ents = this.findSurroundingEnts();
+      if (ents) {
+        for (var _ent in ents) {
+          if (_ent.name != 'tree') {
+            _ent.loseHp(this.getMeleeDamage() / 4);
+          }
+        }
+      }
+    },
+    findSurroundingEnts: function findSurroundingEnts() {
+      ents = {};
+      for (var i = -1; i <= 1; i++) {
+        for (var j = -1; j <= 1; j++) {
+          var tileInfo = this.getMap().getTargetPositionInfo(this.state.x * 1 + i, this.state.y * 1 + j);
+          if (tileInfo.entity && tileInfo.entity != this) {
+            ents[tileInfo.entity.getID()] = tileInfo.entity;
+          }
+        }
+      }
+      if (ents != {}) {
+        return ents;
+      }
+      return false;
     }
   },
   LISTENERS: {
     'bumpEntity': function bumpEntity(evtData) {
       console.log('bumped');
       if (evtData.target.name == 'tree') {
-        if (this.getStr()) {
-          if (this.getStr() >= 14) {
+        if (this.getStr) {
+          if (this.getStr() >= 20) {
             evtData.target.raiseMixinEvent('damaged', { src: this, damageAmount: this.getMeleeDamage() });
             this.raiseMixinEvent('attacks', { actor: this, target: evtData.target });
             this.gainHp(3);
+            return true;
           } else {
             this.raiseMixinEvent('wallBlocked', { reason: 'you aren\'t strong enough' });
             return false;
@@ -17033,7 +17241,8 @@ var ActorWanderer = exports.ActorWanderer = {
       spentActions: 0,
       actingState: false
     },
-    initialize: function initialize() {
+    initialize: function initialize(template) {
+      this.state._ActorWanderer.allowedActionDuration = template.allowedActionDuration;
       _timing.SCHEDULER.add(this, true);
       console.log('entity added');
     }
@@ -17075,6 +17284,25 @@ var ActorWanderer = exports.ActorWanderer = {
       return [false];
     },
     randomMove: function randomMove() {
+      if (this.getRangedDamage && this.getRangedDamage != 0) {
+        var directions = ['w', 's', 'a', 'd'];
+        for (direction in directions) {
+          ent = this.getMap().findClosestEntInLine(ent, direction);
+          if (ent.getName() == 'avatar' || ent.getName() == 'tree') {
+            this.raiseMixinEvent('rangedAttack', { actor: this, target: ent });
+          }
+        }
+      }
+      if (this.getMagicDamage && this.getMagicDamage != 0) {
+        var _directions = ['w', 's', 'a', 'd'];
+        for (direction in _directions) {
+          ent = this.getMap().findClosestEntInLine(ent, direction);
+          if (ent.getName() == 'avatar' || ent.getName() == 'tree') {
+            this.raiseMixinEvent('magicAttack', { actor: this, target: ent, damageAmount: this.getMagicDamage() });
+            this.raiseMixinEvent('usedMag', { manaUsed: 8 });
+          }
+        }
+      }
       var avatar = this.findNearbyAvatar();
       var ally = this.findNearbyAlly();
       if (avatar[0]) {
@@ -17082,12 +17310,12 @@ var ActorWanderer = exports.ActorWanderer = {
       } else if (ally[0]) {
         this.tryWalk(-ally[1], -ally[2]);
       } else {
-        var _num = _rotJs2.default.RNG.getUniform();
-        if (_num < 0.25) {
+        var num = _rotJs2.default.RNG.getUniform();
+        if (num < 0.25) {
           this.tryWalk(1, 0);
-        } else if (0.25 <= _num < 0.5) {
+        } else if (0.25 <= num < 0.5) {
           this.tryWalk(-1, 0);
-        } else if (0.5 <= _num < 0.75) {
+        } else if (0.5 <= num < 0.75) {
           this.tryWalk(0, 1);
         } else {
           this.tryWalk(0, -1);
@@ -17095,9 +17323,8 @@ var ActorWanderer = exports.ActorWanderer = {
       }
     },
     act: function act() {
-      _timing.TIME_ENGINE.lock();
-      _message.Message.send('enemy turn');
       this.randomMove();
+      _timing.TIME_ENGINE.lock();
     }
   },
   LISTENERS: {
@@ -17105,7 +17332,12 @@ var ActorWanderer = exports.ActorWanderer = {
       evtData.spender.state._ActorWanderer.spentActions += evtData.spent;
       //console.log(evtData.spender.state._ActorWanderer.spentActions);
       if (evtData.spender.state._ActorWanderer.spentActions >= evtData.spender.getAllowedActionDuration()) {
-        _timing.TIME_ENGINE.unlock();
+        if (this.getMP) {
+          this.gainMp(1);
+        }
+        if (_timing.TIME_ENGINE._lock) {
+          _timing.TIME_ENGINE.unlock();
+        }
         _timing.SCHEDULER.next();
       }
     }
@@ -17153,8 +17385,10 @@ var ActorPlayer = exports.ActorPlayer = {
       evtData.spender.state._ActorPlayer.spentActions += evtData.spent;
       if (evtData.spender.state._ActorPlayer.spentActions >= evtData.spender.getAllowedActionDuration()) {
         evtData.spender.state._ActorPlayer.spentActions = 0;
+        this.gainMp(2);
         _timing.TIME_ENGINE.unlock();
         _timing.SCHEDULER.next();
+        _message.Message.send('enemy turn');
       }
     }
   }
@@ -17185,7 +17419,7 @@ var ExpPlayer = exports.ExpPlayer = {
   LISTENERS: {
     'killedFoe': function killedFoe(evtData) {
       this.addXP(evtData.target.getXP());
-      this.raiseMixinEvent('levelUp');
+      this.checkLeveled();
     }
   }
 };
@@ -17242,11 +17476,6 @@ var Levels = exports.Levels = {
         this.raiseMixinEvent('levelStats');
         this.checkLeveled();
       }
-    }
-  },
-  LISTENERS: {
-    'levelUp': function levelUp(evtData) {
-      this.checkLeveled();
     }
   }
 };
@@ -17328,6 +17557,243 @@ var PlayerStats = exports.PlayerStats = {
 
 //******************************************
 
+var ManaPoints = exports.ManaPoints = {
+  META: {
+    mixinName: 'ManaPoints',
+    mixinGroupName: 'ManaPoints',
+    stateNameSpace: '_ManaPoints',
+    stateModel: {
+      maxMp: 1,
+      curMp: 1
+    },
+    initialize: function initialize(template) {
+      if (this.getInt) {
+        this.state._ManaPoints.maxMp = this.getInt() + (this.getLevel() - 1);
+      } else {
+        this.state._ManaPoints.maxMp = template.maxMp;
+      }
+      this.state._ManaPoints.curMp = template.curMp || this.state._ManaPoints.maxMp;
+    }
+  },
+  METHODS: {
+    gainMp: function gainMp(amt) {
+      this.state._ManaPoints.curMp += amt;
+      this.state._ManaPoints.curMp = Math.min(this.state._ManaPoints.maxMp, this.state._ManaPoints.curMp);
+    },
+    loseMp: function loseMp(amt) {
+      this.state._ManaPoints.curMp -= amt;
+      this.state._ManaPoints.curMp = Math.min(this.state._ManaPoints.maxMp, this.state._ManaPoints.curMp);
+    },
+    getMp: function getMp() {
+      return this.state._ManaPoints.curMp;
+    },
+    setMp: function setMp(amt) {
+      this.state._ManaPoints.curMp = amt;
+      this.state._ManaPoints.curMp = Math.min(this.state._ManaPoints.maxMp, this.state._ManaPoints.curMp);
+    },
+    getMaxMp: function getMaxMp() {
+      return this.state._ManaPoints.maxMp;
+    },
+    setMaxMp: function setMaxMp(amt) {
+      this.state._ManaPoints.maxMp = amt;
+    }
+  },
+  LISTENERS: {
+    'usedMag': function usedMag(evtData) {
+      if (this.getMp() > evtData.manaUsed) {
+        this.loseMp(evtData.manaUsed);
+        return true;
+      } else {
+        _message.Message.send('You do not have enough MP');
+        return false;
+      }
+    }
+  }
+};
+
+//******************************************
+
+var RangedAttackerPlayer = exports.RangedAttackerPlayer = {
+  META: {
+    mixinName: 'RangedAttackerPlayer',
+    mixinGroupName: 'RangedAttackerGroup',
+    stateNameSpace: '_RangedAttackerPlayer',
+    stateModel: {
+      rangedDamage: 0,
+      magicDamage: 0
+    },
+    initialize: function initialize(template) {
+      if (this.getStr) {
+        this.state._RangedAttackerPlayer.rangedDamage = Math.max((this.getStr() / 2 + this.getAgi() / 2 - 10) * 2, 0);
+        this.state._RangedAttackerPlayer.magicDamage = Math.max(3 + (this.getInt() - 10) * 2, 0);
+      } else {
+        this.state._RangedAttackerPlayer.rangedDamage = template.rangedDamage;
+        this.state._RangedAttackerPlayer.magicDamage = template.magicDamage;
+      }
+    }
+  },
+  METHODS: {
+    getRangedDamage: function getRangedDamage() {
+      return this.state._RangedAttackerPlayer.rangedDamage;
+    },
+    setRangedDamage: function setRangedDamage(amt) {
+      this.state._RangedAttackerPlayer.rangedDamage = amt;
+    },
+
+    getMagicDamage: function getMagicDamage() {
+      return this.state._RangedAttackerPlayer.rangedDamage;
+    },
+    setMagicDamage: function setMagicDamage(amt) {
+      this.state._RangedAttackerPlayer.rangedDamage = amt;
+    }
+  },
+
+  LISTENERS: {
+    'rangedAttack': function rangedAttack(evtData) {
+      if (evtData.target.name == 'tree') {
+        if (this.getStr) {
+          if ((this.getStr() + this.getAgi()) / 2 >= 20) {
+            evtData.target.raiseMixinEvent('damaged', { src: this, damageAmount: this.getRangedDamage() });
+            this.raiseMixinEvent('attacks', { actor: this, target: evtData.target });
+            this.raiseMixinEvent('spendAction', { spender: this, spent: this.getAllowedActionDuration() });
+            return true;
+          } else {
+            _message.Message.send('Your attack was not powerful enough to fell the tree');
+            this.raiseMixinEvent('spendAction', { spender: this, spent: this.getAllowedActionDuration() });
+            return false;
+          }
+        }
+      }
+      evtData.target.raiseMixinEvent('damaged', { src: this, damageAmount: this.getRangedDamage() });
+      this.raiseMixinEvent('attacks', { actor: this, target: evtData.target });
+      this.raiseMixinEvent('spendAction', { spender: this, spent: this.getAllowedActionDuration() });
+      return true;
+    },
+    'magicAttack': function magicAttack(evtData) {
+      if (evtData.target.name == 'tree') {
+        evtData.target.raiseMixinEvent('damaged', { src: this, damageAmount: evtData.damageAmount });
+        this.raiseMixinEvent('attacks', { actor: this, target: evtData.target });
+        _message.Message.send("You have angered the spirits residing in the tree. They retaliate against you.");
+        this.loseHp(2);
+      }
+      evtData.target.raiseMixinEvent('damaged', { src: this, damageAmount: evtData.damageAmount });
+      this.raiseMixinEvent('attacks', { actor: this, target: evtData.target });
+      this.raiseMixinEvent('spendAction', { spender: this, spent: this.getAllowedActionDuration() });
+    }
+  }
+};
+
+//******************************************
+
+var RangedAttacks = exports.RangedAttacks = {
+  META: {
+    mixinName: 'RangedAttacks',
+    mixinGroupName: 'RangedAttacksGroup',
+    stateNameSpace: '_RangedAttacks'
+  },
+  METHODS: {
+    bowAttack: function bowAttack(direction) {
+      var ent = this.getMap().findClosestEntInLine(this, direction);
+      if (ent) {
+        this.raiseMixinEvent('rangedAttack', { actor: this, target: ent });
+        console.log('bowAttack');
+      }
+    },
+    windAttack: function windAttack(direction) {
+      var ent = this.getMap().findClosestEntInLine(this, direction);
+      if (ent) {
+        this.raiseMixinEvent('magicAttack', { actor: this, target: ent, damageAmount: this.getMagicDamage() });
+      }
+      this.raiseMixinEvent('usedMag', { manaUsed: 7 });
+    },
+    fireAttack: function fireAttack(direction) {
+      var ent = this.getMap().findClosestEntInLine(this, direction);
+      var ents = this.getMap().findEntsInArea(ent.getX() - 1, ent.getY() - 1, ent.getX() + 1, ent.gety() + 1);
+      if (ents) {
+        for (var entID in ents) {
+          this.raiseMixinEvent('magicAttack', { actor: this, target: ents[entID], damageAmount: this.getMagicDamage() / 4 });
+        }
+      }
+      this.raiseMixinEvent('usedMag', { manaUsed: 15 });
+    },
+    lightningAttack: function lightningAttack(direction) {
+      var ent = this.getMap().findClosestEntInLine(this, direction);
+      if (ent) {
+        this.raiseMixinEvent('magicAttack', { actor: this, target: ent, damageAmount: this.getMagicDamage() });
+        var nextEnt = this.getMap().findClosestEnemyEntity(ent);
+        if (nextEnt) {
+          this.raiseMixinEvent('magicAttack', { actor: this, target: ent, damageAmount: this.getMagicDamage() / 2 });
+          var finalEnt = this.getMap().findClosestEnemyEntity(ent);
+          if (finalEnt) {
+            this.raiseMixinEvent('magicAttack', { actor: this, target: ent, damageAmount: this.getMagicDamage() / 4 });
+          }
+        }
+      }
+      this.raiseMixinEvent('usedMag', { manaUsed: 25 });
+    }
+  }
+};
+
+//******************************************
+
+var RangedAttackerEnemy = exports.RangedAttackerEnemy = {
+  META: {
+    mixinName: 'RangedAttackerEnemy',
+    mixinGroupName: 'RangedAttackerGroup',
+    stateNameSpace: '_RangedAttackerEnemy',
+    stateModel: {
+      rangedDamage: 0,
+      magicDamage: 0
+    },
+    initialize: function initialize(template) {
+      if (this.getStr) {
+        this.state._RangedAttackerEnemy.rangedDamage = Math.max((this.getStr() / 2 + this.getAgi() / 2 - 10) * 2, 0);
+        this.state._RangedAttackerEnemy.magicDamage = Math.max(3 + (this.getInt() - 10) * 2, 0);
+      } else {
+        this.state._RangedAttackerEnemy.rangedDamage = template.rangedDamage || 0;
+        this.state._RangedAttackerEnemy.magicDamage = template.magicDamage || 0;
+      }
+    }
+  },
+  METHODS: {
+    getRangedDamage: function getRangedDamage() {
+      return this.state._RangedAttackerEnemy.rangedDamage;
+    },
+    setRangedDamage: function setRangedDamage(amt) {
+      this.state._RangedAttackerEnemy.rangedDamage = amt;
+    },
+
+    getMagicDamage: function getMagicDamage() {
+      return this.state._RangedAttackerEnemy.rangedDamage;
+    },
+    setMagicDamage: function setMagicDamage(amt) {
+      this.state._RangedAttackerEnemy.rangedDamage = amt;
+    }
+  },
+
+  LISTENERS: {
+    'rangedAttack': function rangedAttack(evtData) {
+      if (evtData.target.name == 'tree') {
+        return false;
+      }
+      evtData.target.raiseMixinEvent('damaged', { src: this, damageAmount: this.getRangedDamage() });
+      this.raiseMixinEvent('attacks', { actor: this, target: evtData.target });
+      this.raiseMixinEvent('spendAction', { spender: this, spent: this.getAllowedActionDuration() });
+      return true;
+    },
+    'magicAttack': function magicAttack(evtData) {
+      if (evtData.target.name == 'tree') {
+        evtData.target.raiseMixinEvent('damaged', { src: this, damageAmount: evtData.damageAmount });
+        this.raiseMixinEvent('attacks', { actor: this, target: evtData.target });
+        this.loseHp(2);
+      }
+      evtData.target.raiseMixinEvent('damaged', { src: this, damageAmount: evtData.damageAmount });
+      this.raiseMixinEvent('attacks', { actor: this, target: evtData.target });
+      this.raiseMixinEvent('spendAction', { spender: this, spent: this.getAllowedActionDuration() });
+    }
+  }
+};
+
 /***/ }),
 /* 345 */
 /***/ (function(module, exports, __webpack_require__) {
@@ -17338,11 +17804,13 @@ var PlayerStats = exports.PlayerStats = {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.ControlInput = exports.StoryInput = exports.LevelInput = exports.PersistenceInput = exports.HCInput = exports.EndInput = exports.PlayInput = exports.StartupInput = undefined;
+exports.AimInput = exports.ControlInput = exports.StoryInput = exports.LevelInput = exports.PersistenceInput = exports.HCInput = exports.EndInput = exports.PlayInput = exports.StartupInput = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _datastore = __webpack_require__(43);
+
+var _message = __webpack_require__(95);
 
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
@@ -17398,7 +17866,7 @@ var PlayInput = exports.PlayInput = function (_keyBinder2) {
           this.Game.switchMode('level');
           return true;
         }
-        if (evt.key == "c") {
+        if (evt.key == "m") {
           this.Game.switchMode('cache');
           return true;
         }
@@ -17406,7 +17874,7 @@ var PlayInput = exports.PlayInput = function (_keyBinder2) {
           this.Game.switchMode('persistence');
           return true;
         }
-        if (evt.key == "w" || evt.key == "s" || evt.key == "a" || evt.key == "d" || evt.key == "r" || evt.key == 't') {
+        if (evt.key == "w" || evt.key == "s" || evt.key == "a" || evt.key == "d" || evt.key == "r" || evt.key == "t" || evt.key == "z" || evt.key == "x") {
           return evt.key;
         }
       }
@@ -17562,6 +18030,36 @@ var ControlInput = exports.ControlInput = function (_keyBinder8) {
   }]);
 
   return ControlInput;
+}(keyBinder);
+
+var AimInput = exports.AimInput = function (_keyBinder9) {
+  _inherits(AimInput, _keyBinder9);
+
+  function AimInput() {
+    _classCallCheck(this, AimInput);
+
+    return _possibleConstructorReturn(this, (AimInput.__proto__ || Object.getPrototypeOf(AimInput)).apply(this, arguments));
+  }
+
+  _createClass(AimInput, [{
+    key: 'handleInput',
+    value: function handleInput(eventType, evt) {
+      if (eventType == 'keyup') {
+        if (evt.key == "Escape") {
+          this.Game.switchMode('play');
+          return true;
+        }
+      }
+      if (eventType == 'keyup') {
+        if (evt.key == "1" || evt.key == "2" || evt.key == "3" || evt.key == "4") {
+          _message.Message.send("Choose a direction to aim your attack with wsad");
+          return evt.key;
+        }
+      }
+    }
+  }]);
+
+  return AimInput;
 }(keyBinder);
 
 /***/ })

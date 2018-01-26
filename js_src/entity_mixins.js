@@ -147,7 +147,7 @@ export let HitPoints = {
   METHODS: {
     gainHp: function (amt){
       this.state._HitPoints.curHp += amt;
-      this.state._HitPoints.curHp - Math.min(this.state._HitPoints.maxHp, this.state._HitPoints.curHp);
+      this.state._HitPoints.curHp = Math.min(this.state._HitPoints.maxHp, this.state._HitPoints.curHp);
     },
     loseHp: function (amt){
       this.state._HitPoints.curHp -= amt;
@@ -170,8 +170,8 @@ export let HitPoints = {
   LISTENERS: {
     'damaged': function(evtData) {
       if(this.getAgi && this.getAgi() > 10) {
-        dodge = Math.pow(0.97, (this.getAgi()-10));
-        num = ROT.RNG.getUniform();
+        let dodge = Math.pow(0.97, (this.getAgi()-10));
+        let num = ROT.RNG.getUniform();
         if (num > dodge){
           console.log('dodged');
           Message.send('dodged attack')
@@ -213,17 +213,43 @@ export let MeleeAttacker = {
   },
   METHODS: {
     getMeleeDamage: function (){return this.state._MeleeAttacker.meleeDamage;},
-    setMeleeDamage: function (amt){this.state._MeleeAttacker.meleeDamage = amt;}
+    setMeleeDamage: function (amt){this.state._MeleeAttacker.meleeDamage = amt;},
+    surroundingAttack: function(){
+      let ents = this.findSurroundingEnts();
+      if (ents) {
+        for (let ent in ents) {
+          if (ent.name != 'tree'){
+            ent.loseHp(this.getMeleeDamage()/4);
+          }
+        }
+      }
+    },
+    findSurroundingEnts: function(){
+      ents = {}
+      for (let i = -1; i <= 1; i++){
+        for (let j = -1; j <= 1; j++){
+          let tileInfo = this.getMap().getTargetPositionInfo(this.state.x*1 + i, this.state.y*1 + j);
+          if (tileInfo.entity && tileInfo.entity != this) {
+            ents[tileInfo.entity.getID()] = tileInfo.entity;
+          }
+        }
+      }
+      if (ents != {}) {
+        return ents
+      }
+      return false;
+    }
   },
   LISTENERS: {
     'bumpEntity': function(evtData) {
       console.log('bumped');
       if (evtData.target.name == 'tree'){
-        if (this.getStr()){
-          if (this.getStr() >= 14) {
+        if (this.getStr){
+          if (this.getStr() >= 20) {
             evtData.target.raiseMixinEvent('damaged', {src:this, damageAmount:this.getMeleeDamage()});
             this.raiseMixinEvent('attacks', {actor:this, target:evtData.target})
             this.gainHp(3);
+            return true;
           } else {
             this.raiseMixinEvent('wallBlocked', {reason: 'you aren\'t strong enough'});
             return false;
@@ -248,7 +274,8 @@ export let ActorWanderer = {
       spentActions: 0,
       actingState: false
     },
-    initialize: function(){
+    initialize: function(template){
+      this.state._ActorWanderer.allowedActionDuration = template.allowedActionDuration;
       SCHEDULER.add(this, true);
       console.log('entity added');
     }
@@ -290,6 +317,25 @@ export let ActorWanderer = {
       return [false];
     },
     randomMove: function(){
+      if (this.getRangedDamage && this.getRangedDamage != 0) {
+        let directions = ['w','s','a','d']
+        for (direction in directions){
+          ent = this.getMap().findClosestEntInLine(ent, direction)
+          if (ent.getName() == 'avatar' || ent.getName() == 'tree'){
+            this.raiseMixinEvent('rangedAttack', {actor: this, target: ent});
+          }
+        }
+      }
+      if (this.getMagicDamage && this.getMagicDamage != 0) {
+        let directions = ['w','s','a','d']
+        for (direction in directions){
+          ent = this.getMap().findClosestEntInLine(ent, direction)
+          if (ent.getName() == 'avatar' || ent.getName() == 'tree'){
+            this.raiseMixinEvent('magicAttack', {actor: this, target: ent, damageAmount: this.getMagicDamage()});
+            this.raiseMixinEvent('usedMag', {manaUsed: 8})
+          }
+        }
+      }
       let avatar = this.findNearbyAvatar();
       let ally = this.findNearbyAlly()
       if (avatar[0]){
@@ -310,9 +356,8 @@ export let ActorWanderer = {
       }
     },
     act: function() {
-      TIME_ENGINE.lock();
-      Message.send('enemy turn');
       this.randomMove();
+      TIME_ENGINE.lock();
     }
   },
   LISTENERS: {
@@ -320,7 +365,12 @@ export let ActorWanderer = {
       evtData.spender.state._ActorWanderer.spentActions += evtData.spent;
       //console.log(evtData.spender.state._ActorWanderer.spentActions);
       if (evtData.spender.state._ActorWanderer.spentActions >= evtData.spender.getAllowedActionDuration()){
-        TIME_ENGINE.unlock();
+        if (this.getMP){
+          this.gainMp(1);
+        }
+        if (TIME_ENGINE._lock){
+          TIME_ENGINE.unlock();
+        }
         SCHEDULER.next();
       }
     }
@@ -368,8 +418,10 @@ export let ActorPlayer = {
       evtData.spender.state._ActorPlayer.spentActions += evtData.spent;
       if (evtData.spender.state._ActorPlayer.spentActions >= evtData.spender.getAllowedActionDuration()){
         evtData.spender.state._ActorPlayer.spentActions = 0;
+        this.gainMp(2);
         TIME_ENGINE.unlock();
         SCHEDULER.next();
+        Message.send('enemy turn');
       }
     }
   }
@@ -400,7 +452,7 @@ export let ExpPlayer = {
   LISTENERS: {
     'killedFoe': function(evtData) {
       this.addXP(evtData.target.getXP())
-      this.raiseMixinEvent('levelUp')
+      this.checkLeveled();
     }
   }
 };
@@ -459,11 +511,6 @@ export let Levels = {
       }
     }
   },
-  LISTENERS: {
-    'levelUp': function(evtData) {
-      this.checkLeveled();
-    }
-  }
 };
 
 //******************************************
@@ -542,3 +589,224 @@ export let PlayerStats = {
 };
 
 //******************************************
+
+export let ManaPoints = {
+  META:{
+    mixinName: 'ManaPoints',
+    mixinGroupName: 'ManaPoints',
+    stateNameSpace: '_ManaPoints',
+    stateModel: {
+      maxMp: 1,
+      curMp: 1
+    },
+    initialize: function(template){
+      if(this.getInt){
+        this.state._ManaPoints.maxMp = (this.getInt() + (this.getLevel() - 1))
+      } else{
+        this.state._ManaPoints.maxMp = template.maxMp;
+      }
+      this.state._ManaPoints.curMp = template.curMp || this.state._ManaPoints.maxMp;
+    }
+  },
+  METHODS: {
+    gainMp: function (amt){
+      this.state._ManaPoints.curMp += amt;
+      this.state._ManaPoints.curMp = Math.min(this.state._ManaPoints.maxMp, this.state._ManaPoints.curMp);
+    },
+    loseMp: function (amt){
+      this.state._ManaPoints.curMp -= amt;
+      this.state._ManaPoints.curMp = Math.min(this.state._ManaPoints.maxMp, this.state._ManaPoints.curMp);
+    },
+    getMp: function (){
+      return this.state._ManaPoints.curMp;
+    },
+    setMp: function (amt){
+      this.state._ManaPoints.curMp = amt;
+      this.state._ManaPoints.curMp = Math.min(this.state._ManaPoints.maxMp, this.state._ManaPoints.curMp);
+    },
+    getMaxMp: function (){
+      return this.state._ManaPoints.maxMp;
+    },
+    setMaxMp: function (amt){
+      this.state._ManaPoints.maxMp = amt;
+    }
+  },
+  LISTENERS: {
+    'usedMag': function(evtData) {
+      if (this.getMp() > evtData.manaUsed) {
+        this.loseMp(evtData.manaUsed);
+        return true;
+      } else {
+        Message.send('You do not have enough MP')
+        return false;
+      }
+    }
+  }
+};
+
+//******************************************
+
+export let RangedAttackerPlayer = {
+  META:{
+    mixinName: 'RangedAttackerPlayer',
+    mixinGroupName: 'RangedAttackerGroup',
+    stateNameSpace: '_RangedAttackerPlayer',
+    stateModel: {
+      rangedDamage: 0,
+      magicDamage: 0
+    },
+    initialize: function(template){
+      if (this.getStr){
+        this.state._RangedAttackerPlayer.rangedDamage = Math.max((this.getStr()/2+this.getAgi()/2-10) * 2, 0);
+        this.state._RangedAttackerPlayer.magicDamage = Math.max((3 + (this.getInt()-10) * 2), 0);
+      } else {
+        this.state._RangedAttackerPlayer.rangedDamage = template.rangedDamage;
+        this.state._RangedAttackerPlayer.magicDamage = template.magicDamage;
+      }
+    }
+  },
+  METHODS: {
+    getRangedDamage: function (){return this.state._RangedAttackerPlayer.rangedDamage;},
+    setRangedDamage: function (amt){this.state._RangedAttackerPlayer.rangedDamage = amt;},
+
+    getMagicDamage: function (){return this.state._RangedAttackerPlayer.rangedDamage;},
+    setMagicDamage: function (amt){this.state._RangedAttackerPlayer.rangedDamage = amt;},
+  },
+
+  LISTENERS: {
+    'rangedAttack': function(evtData) {
+      if (evtData.target.name == 'tree'){
+        if (this.getStr){
+          if ((this.getStr()+this.getAgi())/2 >= 20) {
+            evtData.target.raiseMixinEvent('damaged', {src:this, damageAmount:this.getRangedDamage()});
+            this.raiseMixinEvent('attacks', {actor:this, target:evtData.target});
+            this.raiseMixinEvent('spendAction', {spender: this, spent: this.getAllowedActionDuration()});
+            return true;
+          } else {
+            Message.send('Your attack was not powerful enough to fell the tree');
+            this.raiseMixinEvent('spendAction', {spender: this, spent: this.getAllowedActionDuration()});
+            return false;
+          }
+        }
+      }
+      evtData.target.raiseMixinEvent('damaged', {src:this, damageAmount:this.getRangedDamage()});
+      this.raiseMixinEvent('attacks', {actor:this, target:evtData.target});
+      this.raiseMixinEvent('spendAction', {spender: this, spent: this.getAllowedActionDuration()});
+      return true;
+    },
+    'magicAttack': function(evtData) {
+      if (evtData.target.name == 'tree'){
+        evtData.target.raiseMixinEvent('damaged', {src:this, damageAmount: evtData.damageAmount});
+        this.raiseMixinEvent('attacks', {actor:this, target:evtData.target});
+        Message.send("You have angered the spirits residing in the tree. They retaliate against you.");
+        this.loseHp(2);
+      }
+      evtData.target.raiseMixinEvent('damaged', {src:this, damageAmount: evtData.damageAmount});
+      this.raiseMixinEvent('attacks', {actor:this, target:evtData.target})
+      this.raiseMixinEvent('spendAction', {spender: this, spent: this.getAllowedActionDuration()});
+    }
+  }
+};
+
+//******************************************
+
+export let RangedAttacks = {
+  META:{
+    mixinName: 'RangedAttacks',
+    mixinGroupName: 'RangedAttacksGroup',
+    stateNameSpace: '_RangedAttacks',
+  },
+  METHODS: {
+    bowAttack: function(direction) {
+      let ent = this.getMap().findClosestEntInLine(this, direction);
+      if (ent){
+        this.raiseMixinEvent('rangedAttack', {actor: this, target: ent});
+        console.log('bowAttack')
+      }
+    },
+    windAttack: function(direction) {
+      let ent = this.getMap().findClosestEntInLine(this, direction);
+      if (ent){
+        this.raiseMixinEvent('magicAttack', {actor: this, target: ent, damageAmount: this.getMagicDamage()});
+      }
+      this.raiseMixinEvent('usedMag', {manaUsed: 7})
+    },
+    fireAttack: function(direction) {
+      let ent = this.getMap().findClosestEntInLine(this, direction);
+      let ents = this.getMap().findEntsInArea(ent.getX() - 1, ent.getY() - 1, ent.getX() + 1, ent.gety() + 1)
+      if (ents){
+        for (let entID in ents) {
+          this.raiseMixinEvent('magicAttack', {actor: this, target: ents[entID], damageAmount: this.getMagicDamage()/4});
+        }
+      }
+      this.raiseMixinEvent('usedMag', {manaUsed: 15})
+    },
+    lightningAttack: function(direction) {
+      let ent = this.getMap().findClosestEntInLine(this, direction);
+      if (ent) {
+        this.raiseMixinEvent('magicAttack', {actor: this, target: ent, damageAmount: this.getMagicDamage()});
+        let nextEnt = this.getMap().findClosestEnemyEntity(ent);
+        if (nextEnt) {
+          this.raiseMixinEvent('magicAttack', {actor: this, target: ent, damageAmount: this.getMagicDamage()/2});
+          let finalEnt = this.getMap().findClosestEnemyEntity(ent);
+          if (finalEnt) {
+            this.raiseMixinEvent('magicAttack', {actor: this, target: ent, damageAmount: this.getMagicDamage()/4});
+          }
+        }
+      }
+      this.raiseMixinEvent('usedMag', {manaUsed: 25})
+    },
+  },
+};
+
+//******************************************
+
+export let RangedAttackerEnemy = {
+  META:{
+    mixinName: 'RangedAttackerEnemy',
+    mixinGroupName: 'RangedAttackerGroup',
+    stateNameSpace: '_RangedAttackerEnemy',
+    stateModel: {
+      rangedDamage: 0,
+      magicDamage: 0
+    },
+    initialize: function(template){
+      if (this.getStr){
+        this.state._RangedAttackerEnemy.rangedDamage = Math.max((this.getStr()/2+this.getAgi()/2-10) * 2, 0);
+        this.state._RangedAttackerEnemy.magicDamage = Math.max((3 + (this.getInt()-10) * 2), 0);
+      } else {
+        this.state._RangedAttackerEnemy.rangedDamage = template.rangedDamage || 0;
+        this.state._RangedAttackerEnemy.magicDamage = template.magicDamage || 0;
+      }
+    }
+  },
+  METHODS: {
+    getRangedDamage: function (){return this.state._RangedAttackerEnemy.rangedDamage;},
+    setRangedDamage: function (amt){this.state._RangedAttackerEnemy.rangedDamage = amt;},
+
+    getMagicDamage: function (){return this.state._RangedAttackerEnemy.rangedDamage;},
+    setMagicDamage: function (amt){this.state._RangedAttackerEnemy.rangedDamage = amt;},
+  },
+
+  LISTENERS: {
+    'rangedAttack': function(evtData) {
+      if (evtData.target.name == 'tree'){
+        return false
+      }
+      evtData.target.raiseMixinEvent('damaged', {src:this, damageAmount:this.getRangedDamage()});
+      this.raiseMixinEvent('attacks', {actor:this, target:evtData.target});
+      this.raiseMixinEvent('spendAction', {spender: this, spent: this.getAllowedActionDuration()});
+      return true;
+    },
+    'magicAttack': function(evtData) {
+      if (evtData.target.name == 'tree'){
+        evtData.target.raiseMixinEvent('damaged', {src:this, damageAmount: evtData.damageAmount});
+        this.raiseMixinEvent('attacks', {actor:this, target:evtData.target});
+        this.loseHp(2);
+      }
+      evtData.target.raiseMixinEvent('damaged', {src:this, damageAmount: evtData.damageAmount});
+      this.raiseMixinEvent('attacks', {actor:this, target:evtData.target});
+      this.raiseMixinEvent('spendAction', {spender: this, spent: this.getAllowedActionDuration()});
+    }
+  }
+};

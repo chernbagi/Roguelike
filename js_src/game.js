@@ -1,6 +1,6 @@
 import ROT from 'rot-js';
 import * as U from './util.js';
-import {StartupMode, PlayMode, WinMode, LoseMode, CacheMode, HelpMode, PersistenceMode, LevelMode, StoryMode, ControlMode} from './ui_mode.js';
+import {StartupMode, PlayMode, WinMode, LoseMode, CacheMode, HelpMode, PersistenceMode, LevelMode, StoryMode, ControlMode, AimMode} from './ui_mode.js';
 import {Message} from './message.js';
 import {DATASTORE} from './datastore.js';
 import {TIME_ENGINE} from './timing.js';
@@ -66,6 +66,7 @@ SPACING: 1.1,
     this.modes.level = new LevelMode(this);
     this.modes.story = new StoryMode(this);
     this.modes.control = new ControlMode(this);
+    this.modes.aim = new AimMode(this);
   },
 
   switchMode: function(newModeName){
