@@ -4,6 +4,7 @@ import {StartupMode, PlayMode, WinMode, LoseMode, CacheMode, HelpMode, Persisten
 import {Message} from './message.js';
 import {DATASTORE} from './datastore.js';
 import {TIME_ENGINE} from './timing.js';
+import {Timer} from './time.js'
 
 export let Game = {
 SPACING: 1.1,
@@ -14,12 +15,12 @@ SPACING: 1.1,
       o: null
     },
     avatar: {
-      w: 20,
+      w: 24,
       h: 24,
       o: null
     },
     message: {
-      w: 100,
+      w: 104,
       h: 6,
       o: null
     }
@@ -81,6 +82,7 @@ SPACING: 1.1,
     this.render();
   },
   setupNewGame: function(){
+    this.timer = new Timer();
     this.randomSeed = 5 + Math.floor(Math.random()*100000);
     console.log("using random seed "+this.randomSeed);
     ROT.RNG.setSeed(this.randomSeed);

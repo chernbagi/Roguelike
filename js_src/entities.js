@@ -25,7 +25,7 @@ EntityFactory.learn({
   chr:'S',
   fg: '#eb4',
   mixinNames: ['WalkerCorporeal', 'HitPoints', 'MeleeAttacker', 'ActorWanderer', 'ExpEnemy'],
-  maxHp: 5,
+  maxHp: 7,
   meleeDamage: 1,
   exp: 1,
   allowedActionDuration: 1

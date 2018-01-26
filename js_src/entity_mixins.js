@@ -219,6 +219,7 @@ export let MeleeAttacker = {
       if (ents) {
         for (let ent in ents) {
           if (ent.name != 'tree'){
+            Message.send('Attacked surrounding ents');
             ent.loseHp(this.getMeleeDamage()/4);
           }
         }
@@ -319,20 +320,24 @@ export let ActorWanderer = {
     randomMove: function(){
       if (this.getRangedDamage && this.getRangedDamage != 0) {
         let directions = ['w','s','a','d']
-        for (direction in directions){
-          ent = this.getMap().findClosestEntInLine(ent, direction)
-          if (ent.getName() == 'avatar' || ent.getName() == 'tree'){
-            this.raiseMixinEvent('rangedAttack', {actor: this, target: ent});
+        for (let direction in directions){
+          let ent = this.getMap().findClosestEntInLine(ent, direction)
+          if (ent){
+            if (ent.getName() == 'avatar' || ent.getName() == 'tree'){
+              this.raiseMixinEvent('rangedAttack', {actor: this, target: ent});
+            }
           }
         }
       }
       if (this.getMagicDamage && this.getMagicDamage != 0) {
         let directions = ['w','s','a','d']
-        for (direction in directions){
-          ent = this.getMap().findClosestEntInLine(ent, direction)
-          if (ent.getName() == 'avatar' || ent.getName() == 'tree'){
-            this.raiseMixinEvent('magicAttack', {actor: this, target: ent, damageAmount: this.getMagicDamage()});
-            this.raiseMixinEvent('usedMag', {manaUsed: 8})
+        for (let direction in directions){
+          let ent = this.getMap().findClosestEntInLine(ent, direction)
+          if (ent){
+            if (ent.getName() == 'avatar' || ent.getName() == 'tree'){
+              this.raiseMixinEvent('magicAttack', {actor: this, target: ent, damageAmount: this.getMagicDamage()});
+              this.raiseMixinEvent('usedMag', {manaUsed: 8})
+            }
           }
         }
       }
@@ -421,7 +426,6 @@ export let ActorPlayer = {
         this.gainMp(2);
         TIME_ENGINE.unlock();
         SCHEDULER.next();
-        Message.send('enemy turn');
       }
     }
   }
@@ -667,10 +671,10 @@ export let RangedAttackerPlayer = {
   },
   METHODS: {
     getRangedDamage: function (){return this.state._RangedAttackerPlayer.rangedDamage;},
-    setRangedDamage: function (amt){this.state._RangedAttackerPlayer.rangedDamage = amt;},
+    setRangedDamage: function (amt){this.state._RangedAttackerPlayer.rangedDamage = Math.max(amt, 0);},
 
-    getMagicDamage: function (){return this.state._RangedAttackerPlayer.rangedDamage;},
-    setMagicDamage: function (amt){this.state._RangedAttackerPlayer.rangedDamage = amt;},
+    getMagicDamage: function (){return this.state._RangedAttackerPlayer.magicDamage;},
+    setMagicDamage: function (amt){this.state._RangedAttackerPlayer.magicDamage = Math.max(amt, 0);},
   },
 
   LISTENERS: {
@@ -721,11 +725,12 @@ export let RangedAttacks = {
       let ent = this.getMap().findClosestEntInLine(this, direction);
       if (ent){
         this.raiseMixinEvent('rangedAttack', {actor: this, target: ent});
-        console.log('bowAttack')
       }
     },
     windAttack: function(direction) {
+      console.log('windAttack')
       let ent = this.getMap().findClosestEntInLine(this, direction);
+      console.dir(ent)
       if (ent){
         this.raiseMixinEvent('magicAttack', {actor: this, target: ent, damageAmount: this.getMagicDamage()});
       }

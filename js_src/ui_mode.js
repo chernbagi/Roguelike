@@ -67,11 +67,15 @@ export class PlayMode extends UIMode {
   }
 
   enter(){
-    Message.send("hit escape to enter persistence mode")
     if (!this.playHandler){
       this.playHandler = new PlayInput(this.Game);
     }
     TIME_ENGINE.unlock();
+    if (!this.Game.timer.hasStarted()){
+      this.Game.timer.start();
+    } else {
+      this.Game.timer.restart();
+    }
   }
 
   toJSON() {
@@ -134,23 +138,53 @@ export class PlayMode extends UIMode {
 
   renderAvatar(display){
     display.clear();
+    if (!this.Game.timer.getRemainingTime()){
+      this.endGame();
+      return true;
+    }
+    if (!this.getAvatar()){
+      this.endGame();
+      return true;
+    }
+    this.score = this.getAvatar().getScore();
     display.drawText(0, 0, "AVATAR");
-    display.drawText(0, 2, "Time: " + this.getAvatar().getTime());
+    display.drawText(0, 2, "Time: " + this.Game.timer.getRemainingTime() + " days");
     display.drawText(0, 3, "Location: " + this.getAvatar().getX() + ", " + this.getAvatar().getY());
     display.drawText(0, 4, "Max HP: " + this.getAvatar().getMaxHp());
     display.drawText(0, 5, "Current HP: " + this.getAvatar().getHp());
-    display.drawText(0, 6, "Melee Damage: " + this.getAvatar().getMeleeDamage());
-    display.drawText(0, 7, "Level: " + this.getAvatar().getLevel());
-    display.drawText(0, 8, "Stat Points: " + this.getAvatar().getSP());
-    display.drawText(0, 9, "Strength: " + this.getAvatar().getStr());
-    display.drawText(0, 10, "Intelligence: " + this.getAvatar().getInt());
-    display.drawText(0, 11, "Vitality: " + this.getAvatar().getVit());
-    display.drawText(0, 12, "Agility: " + this.getAvatar().getAgi());
-    display.drawText(0, 13, "Soldiers Killed: ");// + this.getAvatar().getAgi());
-    display.drawText(0, 14, "Centaurions Killed: ");// + this.getAvatar().getAgi());
-    display.drawText(0, 15, "Generals Killed: ");// + this.getAvatar().getAgi());
+    display.drawText(0, 6, "Max MP: " + this.getAvatar().getMaxMp());
+    display.drawText(0, 7, "Current MP: " + this.getAvatar().getMp());
+    display.drawText(0, 8, "Melee Damage: " + this.getAvatar().getMeleeDamage());
+    display.drawText(0, 9, "Ranged Damage: " + this.getAvatar().getRangedDamage());
+    display.drawText(0, 10, "Magic Damage: " + this.getAvatar().getMagicDamage());
+    display.drawText(0, 11, "Level: " + this.getAvatar().getLevel());
+    display.drawText(0, 12, "Stat Points: " + this.getAvatar().getSP());
+    display.drawText(0, 13, "Strength: " + this.getAvatar().getStr());
+    display.drawText(0, 14, "Intelligence: " + this.getAvatar().getInt());
+    display.drawText(0, 15, "Vitality: " + this.getAvatar().getVit());
+    display.drawText(0, 16, "Agility: " + this.getAvatar().getAgi());
+    display.drawText(0, 17, "Soldiers Killed: "+ this.getAvatar().getKillCount()['soldier']);
+    display.drawText(0, 18, "Centaurions Killed: " + this.getAvatar().getKillCount()['centaurion']);
+    display.drawText(0, 19, "Generals Killed: " + this.getAvatar().getKillCount()['general']);
+    display.drawText(0, 20, "Royal Guards Killed: " + this.getAvatar().getKillCount()['royal guard']);
+    display.drawText(0, 21, "Score: " + this.getAvatar().getScore());
   }
+  endGame(){
+    if (this.getAvatar()) {
+      if (this.getAvatar.endGame()) {
+        this.Game.switchMode('win');
+      } else {
+        this.Game.switchMode('lose');
+      }
+    } else {
+      if (this.score > 500){
+        this.Game.switchMode('win');
+      } else {
+        this.Game.switchMode('lose');
+      }
+    }
 
+  }
   handleInput(eventType, evt){
     let eventOutput = this.playHandler.handleInput(eventType, evt);
     if (eventOutput == 'w') {
@@ -179,6 +213,10 @@ export class PlayMode extends UIMode {
     }
     if (eventOutput == 'z') {
       this.Game.switchMode('aim');
+      return true;
+    }
+    if (eventOutput == 'x') {
+      this.getAvatar().surroundingAttack();
       return true;
     }
     return eventOutput;
@@ -248,8 +286,8 @@ export class PlayMode extends UIMode {
       map.addEntityAt(EntityFactory.create('royal guard'), x, y + 1);
       map.addEntityAt(EntityFactory.create('royal guard'), x, y - 1);
     } else if (this.state.level >= 20) {
-      this.Game.switchMode('win')
-      return(true);
+      this.Game.switchMode('win');
+      return true;
     }
   }
   retreat() {
@@ -270,6 +308,7 @@ export class PlayMode extends UIMode {
 
   exit(){
     TIME_ENGINE.lock();
+    this.Game.timer.pause()
   }
 }
 export class WinMode extends UIMode {
@@ -335,13 +374,12 @@ export class HelpMode extends UIMode {
   }
   render(display) {
     display.clear();
-    display.drawText(35, 1, "Help Mode:");
-    display.drawText(1, 2, "Playmode Controls: wasd to move, k to win, l to lose, r to retreat a level,");
-    display.drawText(1, 3, "t to advance a level,c to enter cache mode, and esc to enter persistence mode");
-    display.drawText(1, 4, "persistence mode: n for new game, s to save, l to load, escape to exit");
-    display.drawText(1, 5, "cache mode: escape to exit");
-    display.drawText(1, 6, "upon winning or losing, hit r to retry");
-    display.drawText(30, 7, "escape to exit");
+    display.drawText(35, 0, "Help Mode:");
+    display.drawText(0, 2, "Use wsad to move. To challange a higher level before all enemies on the current");
+    display.drawText(0, 3, "level have been defeated, press t. To escape to a lower level, press r.");
+    display.drawText(0, 4, "To execute a melee attack, merely bump into an enemy. To execute a ranged");
+    display.drawText(0, 5, "attack, press z and choose your attack. To attack all enemies in your");
+    display.drawText(0, 6, "immediate surroundings, press x.");
   }
   handleInput(eventType, evt){
     return this.hcHandler.handleInput(eventType, evt);
@@ -397,6 +435,7 @@ export class PersistenceMode extends UIMode {
     clearDataStore();
     DATASTORE.ID_SEQ = state.ID_SEQ;
     DATASTORE.LEVEL = state.LEVEL;
+    DATASTORE.TIME = state.TIME;
     console.log(state.GAME);
     if (!state.GAME.rseed){
       DATASTORE.GAME = JSON.parse(state.GAME);
@@ -508,8 +547,9 @@ export class LevelMode extends UIMode {
     }
     if (eventOutput == '2') {
       this.getAvatar().addInt(1);
-      this.getAvatar().setMp((this.getAvatar().getInt() + (this.getAvatar().getLevel() - 1)))
-      this.getAvatar().setMeleeDamage(3 + (this.getAvatar().getInt()-10) * 2)
+      this.getAvatar().setMaxMp((this.getAvatar().getInt() + (this.getAvatar().getLevel() - 1)))
+      this.getAvatar().setMp(this.getAvatar().getMaxMp())
+      this.getAvatar().setMagicDamage(3 + (this.getAvatar().getInt()-10) * 2)
       this.getAvatar().addSP(-1);
       Message.send('1 Intelligence Point Added');
       return true;
@@ -591,18 +631,15 @@ export class ControlMode extends UIMode {
     display.clear();
     display.drawText(0, 0, "Use wsad to move. To challange a higher level before all enemies on the current");
     display.drawText(0, 1, "level have been defeated, press t. To escape to a lower level, press r.");
-    display.drawText(0, 2, "To execute a melee attack, merely bump into an enemy.");
-
-    display.drawText(0, 5, "You will start with 40 stat points to be distributed amongst 4 stats, strength,");
-    display.drawText(0, 6, "intelligence, vitality, and agility. Strength controls your melee attack");
-    display.drawText(0, 7, "power, intelligence your mana for special attacks and special attack");
-    display.drawText(0, 8, "power, vitality your health, and agility your movement speed and");
-    display.drawText(0, 9, "dodging ability (Currently intelligence has no effects, they are to be");
-    display.drawText(0, 10, "implemented soon).");
+    display.drawText(0, 2, "To execute a melee attack, merely bump into an enemy. To execute a ranged");
+    display.drawText(0, 3, "attack, press z and choose your attack. To attack all enemies in your");
+    display.drawText(0, 4, "immediate surroundings, press x.");
+    display.drawText(0, 6, "You will start with 40 stat points to be distributed amongst 4 stats, strength,");
+    display.drawText(0, 7, "intelligence, vitality, and agility. Strength controls your melee attack");
+    display.drawText(0, 8, "power, intelligence your mana for special attacks and special attack");
+    display.drawText(0, 9, "power, vitality your health, and agility your movement speed and");
+    display.drawText(0, 10, "dodging ability.");
     display.drawText(28, 15, "Press any key to continue");
-
-
-
   }
   handleInput(eventType, evt){
     return this.controlHandler.handleInput(eventType, evt);
@@ -622,14 +659,11 @@ export class AimMode extends UIMode{
   handleInput(eventType, evt){
     let secondaryOutput = false;
     let eventOutput = this.aimHandler.handleInput(eventType, evt);
-    console.log(eventOutput);
     if (eventOutput == '1' || eventOutput == '2' || eventOutput == '3' || eventOutput == '4'){
-      console.log('hello')
       this.choice = eventOutput;
     }
-    console.log(this.choice);
-    Message.send("Choose a direction to aim your attack with wsad");
     if (eventType == 'keyup') {
+      Message.send("Choose a direction to aim your attack with wsad");
       if (evt.key == 'w' || evt.key == 's' || evt.key == 'a' || evt.key == 'd'){
         secondaryOutput = evt.key;
       }
@@ -639,24 +673,28 @@ export class AimMode extends UIMode{
       if (secondaryOutput != false){
         console.log(secondaryOutput)
         this.getAvatar().bowAttack(secondaryOutput);
+        this.Game.switchMode('play');
       }
       return true;
     }
     if (this.choice == '2') {
       if (secondaryOutput != false){
         this.getAvatar().windAttack(secondaryOutput);
+        this.Game.switchMode('play');
       }
       return true;
     }
     if (this.choice == '3') {
       if (secondaryOutput != false){
         this.getAvatar().fireAttack(secondaryOutput);
+        this.Game.switchMode('play');
       }
       return true;
     }
     if (this.choice == '4') {
       if (secondaryOutput != false){
         this.getAvatar().lightningAttack(secondaryOutput);
+        this.Game.switchMode('play');
       }
       return true;
     }
@@ -664,7 +702,31 @@ export class AimMode extends UIMode{
   }
   render (display) {
     display.drawText(19, 0, "AIM MODE: SELECT FROM THE FOLLOWING ATTACKS");
-    display.drawText(0, 1, "1: Bow  2: Wind Blade  3: Inferno  4: Chain Lightning")
+    display.drawText(13, 1, "1: Bow  2: Wind Blade  3: Inferno  4: Chain Lightning")
     display.drawText(28, 2, "Press escape to exit");
+  }
+  renderAvatar(display){
+    display.clear();
+    display.drawText(0, 0, "AVATAR");
+    display.drawText(0, 2, "Time: " + this.Game.timer.getRemainingTime() + " days");
+    display.drawText(0, 3, "Location: " + this.getAvatar().getX() + ", " + this.getAvatar().getY());
+    display.drawText(0, 4, "Max HP: " + this.getAvatar().getMaxHp());
+    display.drawText(0, 5, "Current HP: " + this.getAvatar().getHp());
+    display.drawText(0, 6, "Max MP: " + this.getAvatar().getMaxMp());
+    display.drawText(0, 7, "Current MP: " + this.getAvatar().getMp());
+    display.drawText(0, 8, "Melee Damage: " + this.getAvatar().getMeleeDamage());
+    display.drawText(0, 9, "Ranged Damage: " + this.getAvatar().getRangedDamage());
+    display.drawText(0, 10, "Magic Damage: " + this.getAvatar().getMagicDamage());
+    display.drawText(0, 11, "Level: " + this.getAvatar().getLevel());
+    display.drawText(0, 12, "Stat Points: " + this.getAvatar().getSP());
+    display.drawText(0, 13, "Strength: " + this.getAvatar().getStr());
+    display.drawText(0, 14, "Intelligence: " + this.getAvatar().getInt());
+    display.drawText(0, 15, "Vitality: " + this.getAvatar().getVit());
+    display.drawText(0, 16, "Agility: " + this.getAvatar().getAgi());
+    display.drawText(0, 17, "Soldiers Killed: "+ this.getAvatar().getKillCount()['soldier']);
+    display.drawText(0, 18, "Centaurions Killed: " + this.getAvatar().getKillCount()['centaurion']);
+    display.drawText(0, 19, "Generals Killed: " + this.getAvatar().getKillCount()['general']);
+    display.drawText(0, 20, "Royal Guards Killed: " + this.getAvatar().getKillCount()['royal guard']);
+    display.drawText(0, 21, "Score: " + this.getAvatar().getScore());
   }
 }

@@ -9,6 +9,7 @@ export function clearDataStore(){
     GAME: {},
     MAPS: {},
     ENTITIES: {},
-    LEVEL: {}
+    LEVEL: {},
+    TIME: {}
   }
 }

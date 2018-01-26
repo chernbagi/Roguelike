@@ -14,6 +14,13 @@ export class Entity extends MixableSymbol {
     this.state.y = 0;
     this.state.setupMapID = 0;
     this.state.id = uniqueID();
+    this.state.killCount = {
+      'soldier': 0,
+      'centaurion': 0,
+      'general': 0,
+      'royal guard': 0,
+      'king': 0
+    }
   }
 
   getID() {return this.state.id;}
@@ -36,12 +43,45 @@ export class Entity extends MixableSymbol {
   getMap(){
     return DATASTORE.MAPS[this.state.setupMapID];
   }
-
+  getAvatar(){
+    for (let entID in DATASTORE.ENTITIES) {
+      if (DATASTORE.ENTITIES[entID].getName() == 'avatar'){
+        return DATASTORE.ENTITIES[entID];
+      }
+    }
+  }
+  getKillCount() {
+    if (this.state.killCount){
+      return this.state.killCount;
+    }
+    return false;
+  }
+  getScore() {
+    let soldierCount = this.getKillCount()['soldier'];
+    let centaurionCount = this.getKillCount()['centaurion'];
+    let generalCount = this.getKillCount()['general'];
+    let royalGuardCount = this.getKillCount()['royal guard'];
+    let kingCount = this.getKillCount()['king'];
+    let score = soldierCount * 1 + centaurionCount * 5 + generalCount * 25 + royalGuardCount * 25 + kingCount * 500;
+    return score;
+  }
+  endGame() {
+    let score = this.getScore();
+    if (score >= 500) {
+      return true;
+    } else {
+      return false;
+    }
+  }
   destroy(){
+    if (this.getName() != 'avatar' && this.getName() != 'tree') {
+      this.getAvatar().getKillCount()[this.getName()] = this.getAvatar().getKillCount()[this.getName()]*1 + 1;
+    }
+    if (this.getName() == 'avatar') {
+      this.endGame();
+    }
     this.getMap().extractEntity(this);
-    console.dir(this);
     SCHEDULER.remove(this);
-    console.dir(SCHEDULER);
     delete DATASTORE.ENTITIES[this.getID()];
     this.getMap().nextLevel();
   }

@@ -53,8 +53,10 @@ class Map {
         let closeEntID = entID;
       }
     }
-    if (DATASTORE.ENTITIES[closeEntID]){
-      return DATASTORE.ENTITIES[closeEntID];
+    if (closeEntID){
+      if (DATASTORE.ENTITIES[closeEntID]){
+        return DATASTORE.ENTITIES[closeEntID];
+      }
     }
     return false;
   }
@@ -64,16 +66,18 @@ class Map {
         for (let entID in this.state.entityIDtoMapPos) {
           if (DATASTORE.ENTITIES[entID].getPos() == `${ent.getX()},${i}`) {
             return DATASTORE.ENTITIES[entID];
+            console.dir(DATASTORE.ENTITIES[entID]);
           }
         }
       }
       return false;
     }
     if (direction == 's') {
-      for (let i = (ent.getY()-1); i < this.getXdim(); i++){
+      for (let i = (ent.getY()+1); i < this.getXdim(); i++){
         for (let entID in this.state.entityIDtoMapPos) {
           if (DATASTORE.ENTITIES[entID].getPos() == `${ent.getX()},${i}`) {
             return DATASTORE.ENTITIES[entID];
+            console.dir(DATASTORE.ENTITIES[entID]);
           }
         }
       }
@@ -84,16 +88,19 @@ class Map {
         for (let entID in this.state.entityIDtoMapPos) {
           if (DATASTORE.ENTITIES[entID].getPos() == `${i},${ent.getY()}`) {
             return DATASTORE.ENTITIES[entID];
+            console.dir(DATASTORE.ENTITIES[entID]);
           }
         }
       }
       return false;
     }
     if (direction == 'd') {
-      for (let i = (ent.getX()-1); i < this.getXdim(); i++){
+      for (let i = (ent.getX()+1); i < this.getXdim(); i++){
         for (let entID in this.state.entityIDtoMapPos) {
           if (DATASTORE.ENTITIES[entID].getPos() == `${i},${ent.getY()}`) {
             return DATASTORE.ENTITIES[entID];
+            console.dir(DATASTORE.ENTITIES[entID]);
+
           }
         }
       }
