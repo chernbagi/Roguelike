@@ -4,6 +4,6 @@
 * implement multiple maps - done
 * implement increasing difficulty - done
 * implement leveling/stats - done
-* implement ultimate win and lose conditions
-* fix messaging system
-* clean ui state transitions and add story elements
+* implement ultimate win and lose conditions - done
+* fix messaging system - done
+* clean ui state transitions and add story elements - done

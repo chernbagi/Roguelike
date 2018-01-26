@@ -15638,7 +15638,7 @@ var PlayMode = exports.PlayMode = function (_UIMode2) {
         map.addEntityAt(EntityFactory.create('royal guard'), x, y + 1);
         map.addEntityAt(EntityFactory.create('royal guard'), x, y - 1);
       } else if (this.state.level >= 20) {
-        this.Game.switchMode('win');
+        this.endGame();
         return true;
       }
     }
