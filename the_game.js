@@ -15421,6 +15421,7 @@ var PlayMode = exports.PlayMode = function (_UIMode2) {
     key: 'setupNewGame',
     value: function setupNewGame() {
       _timing.SCHEDULER.clear();
+      this.state.level = 0;
       var m = (0, _map.MapMaker)({ xdim: 40, ydim: 12 });
       this.state.mapID = m.getID();
       m.build();

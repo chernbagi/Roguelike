@@ -87,6 +87,7 @@ export class PlayMode extends UIMode {
 
   setupNewGame() {
     SCHEDULER.clear();
+    this.state.level = 0;
     let m = MapMaker({xdim: 40, ydim: 12});
     this.state.mapID = m.getID();
     m.build();
